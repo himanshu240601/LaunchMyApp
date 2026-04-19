@@ -550,10 +550,9 @@ export function SlideEditor({
                 <div className="space-y-2.5">
                   <p className="text-sm font-medium text-foreground">Templates</p>
                   <div className="grid gap-2">
-                    {SCREENSHOT_TEMPLATES.map((template) => (
-                      (() => {
-                        const isDefaultTemplate = template.id === "default";
-                        return (
+                    {SCREENSHOT_TEMPLATES.map((template) => {
+                      const isDefaultTemplate = template.id === "default";
+                      return (
                       <button
                         key={template.id}
                         type="button"
@@ -569,9 +568,8 @@ export function SlideEditor({
                       >
                         <span className="font-medium text-foreground">{template.label}</span>
                       </button>
-                        );
-                      })()
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
