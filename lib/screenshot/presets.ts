@@ -5,6 +5,14 @@ export type ExportPreset = {
   height: number;
 };
 
+export type ExportQualityId = "default" | "high" | "very-high";
+
+export type ExportQualityOption = {
+  id: ExportQualityId;
+  label: string;
+  scale: number;
+};
+
 export type Slide = {
   id: string;
   image: string;
@@ -17,6 +25,12 @@ export type Slide = {
 export const EXPORT_PRESETS: ExportPreset[] = [
   { id: "iphone-67", label: 'iPhone 6.7"', width: 1290, height: 2796 },
   { id: "iphone-65", label: 'iPhone 6.5"', width: 1242, height: 2688 },
+];
+
+export const EXPORT_QUALITY_OPTIONS: ExportQualityOption[] = [
+  { id: "default", label: "Default", scale: 1 },
+  { id: "high", label: "High", scale: 2 },
+  { id: "very-high", label: "Very High", scale: 3 },
 ];
 
 export const AUTO_TITLES = [

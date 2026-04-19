@@ -15,6 +15,8 @@ export default function EditStepPage() {
     slides,
     activeSlide,
     activeSlideIndex,
+    selectedPresets,
+    applyPreviewToAll,
     setActiveSlideIndex,
     handleFilesSelected,
     removeSlide,
@@ -33,6 +35,8 @@ export default function EditStepPage() {
     frameEnabled,
     setFrameEnabled,
     previewPreset,
+    toggleExportPreset,
+    setApplyPreviewToAll,
     backgroundStyleId,
     setBackgroundStyleId,
     fontFamilyId,
@@ -118,7 +122,11 @@ export default function EditStepPage() {
               onLayoutChange={setLayout}
               frameEnabled={frameEnabled}
               onFrameToggle={setFrameEnabled}
+              applyPreviewToAll={applyPreviewToAll}
+              onApplyPreviewToAllChange={setApplyPreviewToAll}
               previewPreset={previewPreset}
+              selectedPresets={selectedPresets}
+              onToggleExportPreset={toggleExportPreset}
               backgroundStyleId={backgroundStyleId}
               onBackgroundStyleChange={setBackgroundStyleId}
               fontFamilyId={fontFamilyId}

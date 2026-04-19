@@ -18,7 +18,9 @@ import {
 import {
   AUTO_SUBTITLES,
   AUTO_TITLES,
+  EXPORT_QUALITY_OPTIONS,
   EXPORT_PRESETS,
+  type ExportQualityId,
   type ExportPreset,
   type Slide,
 } from "@/lib/screenshot/presets";
@@ -43,6 +45,22 @@ const DEFAULT_SUBTITLE_SIZE_PX = 48;
 const DEFAULT_TITLE_BASE_SCALE = 1290 * 0.07;
 const DEFAULT_SUBTITLE_BASE_SCALE = 1290 * 0.03;
 const MAX_SCREENSHOTS = 4;
+const DEFAULT_RENDER_CONTROLS: RenderControls = {
+  backgroundStyleId: "template-default",
+  customBackgroundColor: "#ffffff",
+  customBackgroundOpacity: 1,
+  customTextColor: "#20130d",
+  fontFamilyId: "display",
+  layout: "text-top-image-bottom",
+  titleScaleMultiplier: DEFAULT_TITLE_SIZE_PX / DEFAULT_TITLE_BASE_SCALE,
+  subtitleScaleMultiplier: DEFAULT_SUBTITLE_SIZE_PX / DEFAULT_SUBTITLE_BASE_SCALE,
+  subtitleSpacingMultiplier: 1,
+  textOffsetX: 0,
+  textOffsetY: 0,
+  screenshotScaleMultiplier: 1,
+  screenshotOffsetX: 0,
+  screenshotOffsetY: 0,
+};
 
 type CreateFlowContextValue = {
   slides: Slide[];
@@ -66,9 +84,16 @@ type CreateFlowContextValue = {
   screenshotOffsetY: number;
   exportName: string;
   previewPreset: ExportPreset;
+  exportQuality: ExportQualityId;
   frameEnabled: boolean;
+  applyPreviewToAll: boolean;
+  previewTargetSlideIds: string[];
   isExporting: boolean;
   renderControls: RenderControls;
+  defaultRenderControls: RenderControls;
+  slideRenderControlsById: Record<string, Partial<RenderControls>>;
+  defaultFrameEnabled: boolean;
+  slideFrameEnabledById: Record<string, boolean>;
   handleFilesSelected: (files: File[]) => void;
   setActiveSlideIndex: (index: number) => void;
   handleTitleChange: (title: string) => void;
@@ -90,8 +115,11 @@ type CreateFlowContextValue = {
   setScreenshotOffsetY: (value: number) => void;
   setExportName: (value: string) => void;
   setPreviewPresetId: (presetId: string) => void;
+  toggleExportPreset: (presetId: string) => void;
+  setExportQuality: (value: ExportQualityId) => void;
+  setApplyPreviewToAll: (value: boolean) => void;
+  togglePreviewTargetSlideId: (slideId: string) => void;
   setFrameEnabled: (enabled: boolean) => void;
-  handlePresetToggle: (presetId: string) => void;
   removeSlide: (slideId: string) => void;
   handleExport: () => Promise<void>;
 };
@@ -104,28 +132,18 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   const [selectedPresets, setSelectedPresets] = useState<ExportPreset[]>(EXPORT_PRESETS);
   const [selectedTemplate, setSelectedTemplate] =
     useState<PreviewTemplateId>(DEFAULT_PREVIEW_TEMPLATE_ID);
-  const [backgroundStyleId, setBackgroundStyleId] =
-    useState<BackgroundStyleId>("template-default");
-  const [customBackgroundColor, setCustomBackgroundColor] = useState("#ffffff");
-  const [customBackgroundOpacity, setCustomBackgroundOpacity] = useState(1);
-  const [customTextColor, setCustomTextColor] = useState("#20130d");
-  const [fontFamilyId, setFontFamilyId] = useState<FontFamilyId>("display");
-  const [layout, setLayout] = useState<LayoutId>("text-top-image-bottom");
-  const [titleScaleMultiplier, setTitleScaleMultiplier] = useState(
-    DEFAULT_TITLE_SIZE_PX / DEFAULT_TITLE_BASE_SCALE,
-  );
-  const [subtitleScaleMultiplier, setSubtitleScaleMultiplier] = useState(
-    DEFAULT_SUBTITLE_SIZE_PX / DEFAULT_SUBTITLE_BASE_SCALE,
-  );
-  const [subtitleSpacingMultiplier, setSubtitleSpacingMultiplier] = useState(1);
-  const [textOffsetX, setTextOffsetX] = useState(0);
-  const [textOffsetY, setTextOffsetY] = useState(0);
-  const [screenshotScaleMultiplier, setScreenshotScaleMultiplier] = useState(1);
-  const [screenshotOffsetX, setScreenshotOffsetX] = useState(0);
-  const [screenshotOffsetY, setScreenshotOffsetY] = useState(0);
+  const [globalRenderControls, setGlobalRenderControls] =
+    useState<RenderControls>(DEFAULT_RENDER_CONTROLS);
+  const [slideRenderControlsById, setSlideRenderControlsById] = useState<
+    Record<string, Partial<RenderControls>>
+  >({});
   const [exportName, setExportName] = useState("Untitled_1");
   const [previewPresetId, setPreviewPresetId] = useState(EXPORT_PRESETS[0].id);
-  const [frameEnabled, setFrameEnabled] = useState(true);
+  const [exportQuality, setExportQuality] = useState<ExportQualityId>("default");
+  const [defaultFrameEnabled, setDefaultFrameEnabled] = useState(true);
+  const [slideFrameEnabledById, setSlideFrameEnabledById] = useState<Record<string, boolean>>({});
+  const [applyPreviewToAll, setApplyPreviewToAllState] = useState(true);
+  const [previewTargetSlideIds, setPreviewTargetSlideIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const objectUrlsRef = useRef<string[]>([]);
 
@@ -138,44 +156,215 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const activeSlide = slides[activeSlideIndex] ?? null;
-  const activePresets = useMemo(() => selectedPresets, [selectedPresets]);
   const previewPreset =
     EXPORT_PRESETS.find((preset) => preset.id === previewPresetId) ?? EXPORT_PRESETS[0];
-  const renderControls = useMemo<RenderControls>(
-    () => ({
-      backgroundStyleId,
-      customBackgroundColor,
-      customBackgroundOpacity,
-      customTextColor,
-      fontFamilyId,
-      layout,
-      titleScaleMultiplier,
-      subtitleScaleMultiplier,
-      subtitleSpacingMultiplier,
-      textOffsetX,
-      textOffsetY,
-      screenshotScaleMultiplier,
-      screenshotOffsetX,
-      screenshotOffsetY,
-    }),
-    [
-      backgroundStyleId,
-      customBackgroundColor,
-      customBackgroundOpacity,
-      customTextColor,
-      fontFamilyId,
-      layout,
-      subtitleSpacingMultiplier,
-      textOffsetX,
-      textOffsetY,
-      screenshotScaleMultiplier,
-      screenshotOffsetX,
-      screenshotOffsetY,
-      subtitleScaleMultiplier,
-      titleScaleMultiplier,
-    ],
-  );
+  const getRenderControlsForSlide = useCallback((slideId?: string | null) => ({
+    ...DEFAULT_RENDER_CONTROLS,
+    ...globalRenderControls,
+    ...(slideId ? slideRenderControlsById[slideId] ?? {} : {}),
+  }), [globalRenderControls, slideRenderControlsById]);
 
+  const getFrameEnabledForSlide = useCallback((slideId?: string | null) => (
+    slideId && Object.prototype.hasOwnProperty.call(slideFrameEnabledById, slideId)
+      ? slideFrameEnabledById[slideId]
+      : defaultFrameEnabled
+  ), [defaultFrameEnabled, slideFrameEnabledById]);
+
+  const setApplyPreviewToAll = useCallback((value: boolean) => {
+    setApplyPreviewToAllState(value);
+
+    if (value) {
+      if (activeSlide) {
+        setGlobalRenderControls(getRenderControlsForSlide(activeSlide.id));
+        setDefaultFrameEnabled(getFrameEnabledForSlide(activeSlide.id));
+      }
+      setSlideRenderControlsById({});
+      setSlideFrameEnabledById({});
+      return;
+    }
+
+    setPreviewTargetSlideIds((currentIds) => {
+      if (currentIds.length) {
+        return currentIds;
+      }
+
+      return activeSlide ? [activeSlide.id] : [];
+    });
+  }, [activeSlide, getFrameEnabledForSlide, getRenderControlsForSlide]);
+
+  const renderControls = useMemo<RenderControls>(
+    () => getRenderControlsForSlide(activeSlide?.id),
+    [activeSlide?.id, getRenderControlsForSlide],
+  );
+  const resolvedPreviewTargetSlideIds = useMemo(() => {
+    if (!applyPreviewToAll) {
+      return activeSlide ? [activeSlide.id] : [];
+    }
+
+    return previewTargetSlideIds.filter((slideId) =>
+      slides.some((slide) => slide.id === slideId),
+    );
+  }, [activeSlide, applyPreviewToAll, previewTargetSlideIds, slides]);
+  const frameEnabled = useMemo(
+    () => getFrameEnabledForSlide(activeSlide?.id),
+    [activeSlide?.id, getFrameEnabledForSlide],
+  );
+  const backgroundStyleId = renderControls.backgroundStyleId ?? DEFAULT_RENDER_CONTROLS.backgroundStyleId!;
+  const customBackgroundColor =
+    renderControls.customBackgroundColor ?? DEFAULT_RENDER_CONTROLS.customBackgroundColor!;
+  const customBackgroundOpacity =
+    renderControls.customBackgroundOpacity ?? DEFAULT_RENDER_CONTROLS.customBackgroundOpacity!;
+  const customTextColor = renderControls.customTextColor ?? DEFAULT_RENDER_CONTROLS.customTextColor!;
+  const fontFamilyId = renderControls.fontFamilyId ?? DEFAULT_RENDER_CONTROLS.fontFamilyId!;
+  const layout = renderControls.layout ?? DEFAULT_RENDER_CONTROLS.layout!;
+  const titleScaleMultiplier =
+    renderControls.titleScaleMultiplier ?? DEFAULT_RENDER_CONTROLS.titleScaleMultiplier!;
+  const subtitleScaleMultiplier =
+    renderControls.subtitleScaleMultiplier ?? DEFAULT_RENDER_CONTROLS.subtitleScaleMultiplier!;
+  const subtitleSpacingMultiplier =
+    renderControls.subtitleSpacingMultiplier ?? DEFAULT_RENDER_CONTROLS.subtitleSpacingMultiplier!;
+  const textOffsetX = renderControls.textOffsetX ?? DEFAULT_RENDER_CONTROLS.textOffsetX!;
+  const textOffsetY = renderControls.textOffsetY ?? DEFAULT_RENDER_CONTROLS.textOffsetY!;
+  const screenshotScaleMultiplier =
+    renderControls.screenshotScaleMultiplier ?? DEFAULT_RENDER_CONTROLS.screenshotScaleMultiplier!;
+  const screenshotOffsetX =
+    renderControls.screenshotOffsetX ?? DEFAULT_RENDER_CONTROLS.screenshotOffsetX!;
+  const screenshotOffsetY =
+    renderControls.screenshotOffsetY ?? DEFAULT_RENDER_CONTROLS.screenshotOffsetY!;
+
+  const updateRenderControls = useCallback((updates: Partial<RenderControls>) => {
+    const targetKeys = Object.keys(updates) as (keyof RenderControls)[];
+
+    if (applyPreviewToAll) {
+      setGlobalRenderControls((currentControls) => ({
+        ...currentControls,
+        ...updates,
+      }));
+      setSlideRenderControlsById((currentById) =>
+        Object.fromEntries(
+          Object.entries(currentById)
+            .map(([slideId, controls]) => {
+              const nextControls = { ...controls };
+              targetKeys.forEach((key) => {
+                delete nextControls[key];
+              });
+
+              return [slideId, nextControls];
+            })
+            .filter(([, controls]) => Object.keys(controls).length > 0),
+        ),
+      );
+      return;
+    }
+
+    const targetIds = resolvedPreviewTargetSlideIds.length
+      ? resolvedPreviewTargetSlideIds
+      : activeSlide
+        ? [activeSlide.id]
+        : [];
+
+    if (!targetIds.length) {
+      return;
+    }
+
+    setSlideRenderControlsById((currentById) => {
+      const nextById = { ...currentById };
+
+      targetIds.forEach((slideId) => {
+        nextById[slideId] = {
+          ...(nextById[slideId] ?? {}),
+          ...updates,
+        };
+      });
+
+      return nextById;
+    });
+  }, [activeSlide, applyPreviewToAll, resolvedPreviewTargetSlideIds]);
+
+  const setFrameEnabled = useCallback((enabled: boolean) => {
+    if (applyPreviewToAll) {
+      setDefaultFrameEnabled(enabled);
+      setSlideFrameEnabledById({});
+      return;
+    }
+
+    const targetIds = resolvedPreviewTargetSlideIds.length
+      ? resolvedPreviewTargetSlideIds
+      : activeSlide
+        ? [activeSlide.id]
+        : [];
+
+    if (!targetIds.length) {
+      return;
+    }
+
+    setSlideFrameEnabledById((currentById) => {
+      const nextById = { ...currentById };
+      targetIds.forEach((slideId) => {
+        nextById[slideId] = enabled;
+      });
+      return nextById;
+    });
+  }, [activeSlide, applyPreviewToAll, resolvedPreviewTargetSlideIds]);
+
+  const setBackgroundStyleId = useCallback((value: BackgroundStyleId) => {
+    updateRenderControls({ backgroundStyleId: value });
+  }, [updateRenderControls]);
+  const setCustomBackgroundColor = useCallback((value: string) => {
+    updateRenderControls({ customBackgroundColor: value });
+  }, [updateRenderControls]);
+  const setCustomBackgroundOpacity = useCallback((value: number) => {
+    updateRenderControls({ customBackgroundOpacity: value });
+  }, [updateRenderControls]);
+  const setCustomTextColor = useCallback((value: string) => {
+    updateRenderControls({ customTextColor: value });
+  }, [updateRenderControls]);
+  const setFontFamilyId = useCallback((value: FontFamilyId) => {
+    updateRenderControls({ fontFamilyId: value });
+  }, [updateRenderControls]);
+  const setLayout = useCallback((value: LayoutId) => {
+    updateRenderControls({ layout: value });
+  }, [updateRenderControls]);
+  const setTitleScaleMultiplier = useCallback((value: number) => {
+    updateRenderControls({ titleScaleMultiplier: value });
+  }, [updateRenderControls]);
+  const setSubtitleScaleMultiplier = useCallback((value: number) => {
+    updateRenderControls({ subtitleScaleMultiplier: value });
+  }, [updateRenderControls]);
+  const setSubtitleSpacingMultiplier = useCallback((value: number) => {
+    updateRenderControls({ subtitleSpacingMultiplier: value });
+  }, [updateRenderControls]);
+  const setTextOffsetX = useCallback((value: number) => {
+    updateRenderControls({ textOffsetX: value });
+  }, [updateRenderControls]);
+  const setTextOffsetY = useCallback((value: number) => {
+    updateRenderControls({ textOffsetY: value });
+  }, [updateRenderControls]);
+  const setScreenshotScaleMultiplier = useCallback((value: number) => {
+    updateRenderControls({ screenshotScaleMultiplier: value });
+  }, [updateRenderControls]);
+  const setScreenshotOffsetX = useCallback((value: number) => {
+    updateRenderControls({ screenshotOffsetX: value });
+  }, [updateRenderControls]);
+  const setScreenshotOffsetY = useCallback((value: number) => {
+    updateRenderControls({ screenshotOffsetY: value });
+  }, [updateRenderControls]);
+
+  const togglePreviewTargetSlideId = useCallback((slideId: string) => {
+    setPreviewTargetSlideIds((currentIds) => {
+      const validCurrentIds = currentIds.filter((currentId) =>
+        slides.some((slide) => slide.id === currentId),
+      );
+      const exists = validCurrentIds.includes(slideId);
+      if (exists) {
+        return validCurrentIds.length === 1
+          ? validCurrentIds
+          : validCurrentIds.filter((currentId) => currentId !== slideId);
+      }
+
+      return [...validCurrentIds, slideId];
+    });
+  }, [slides]);
   const handleFilesSelected = useCallback((files: File[]) => {
     const timestamp = Date.now();
 
@@ -227,23 +416,8 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     );
   }, [activeSlideIndex]);
 
-  const handlePresetToggle = useCallback((presetId: string) => {
-    setSelectedPresets((current) =>
-      current.some((preset) => preset.id === presetId)
-        ? current.filter((preset) => preset.id !== presetId)
-        : [...current, EXPORT_PRESETS.find((preset) => preset.id === presetId)!],
-    );
-  }, []);
-
   const removeSlide = useCallback((slideId: string) => {
     setSlides((currentSlides) => {
-      const slideToRemove = currentSlides.find((slide) => slide.id === slideId);
-
-      if (slideToRemove) {
-        URL.revokeObjectURL(slideToRemove.image);
-        objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== slideToRemove.image);
-      }
-
       const nextSlides = currentSlides
         .filter((slide) => slide.id !== slideId)
         .map((slide, index) => ({
@@ -265,12 +439,25 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
 
       return nextSlides;
     });
+    setPreviewTargetSlideIds((currentIds) => currentIds.filter((currentId) => currentId !== slideId));
+    setSlideRenderControlsById((currentById) =>
+      Object.fromEntries(
+        Object.entries(currentById).filter(([currentId]) => currentId !== slideId),
+      ),
+    );
+    setSlideFrameEnabledById((currentById) =>
+      Object.fromEntries(
+        Object.entries(currentById).filter(([currentId]) => currentId !== slideId),
+      ),
+    );
   }, []);
 
   const handleExport = useCallback(async () => {
     const exportableSlides = slides.filter((slide) => slide.enabled);
+    const qualityScale =
+      EXPORT_QUALITY_OPTIONS.find((option) => option.id === exportQuality)?.scale ?? 1;
 
-    if (!exportableSlides.length || !activePresets.length) {
+    if (!exportableSlides.length || !selectedPresets.length) {
       return;
     }
 
@@ -279,13 +466,14 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       const files = [];
 
       for (const slide of exportableSlides) {
-        for (const preset of activePresets) {
+        for (const preset of selectedPresets) {
           const blob = await generateSlideBlob(
             slide,
             preset,
             selectedTemplate,
-            frameEnabled,
-            renderControls,
+            getFrameEnabledForSlide(slide.id),
+            getRenderControlsForSlide(slide.id),
+            qualityScale,
           );
           files.push({
             name: `${preset.id}/${slide.order + 1}_${preset.id}.png`,
@@ -298,7 +486,41 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsExporting(false);
     }
-  }, [activePresets, exportName, frameEnabled, renderControls, selectedTemplate, slides]);
+  }, [
+    exportName,
+    exportQuality,
+    getFrameEnabledForSlide,
+    getRenderControlsForSlide,
+    selectedPresets,
+    selectedTemplate,
+    slides,
+  ]);
+
+  const toggleExportPreset = useCallback((presetId: string) => {
+    setSelectedPresets((currentPresets) => {
+      const exists = currentPresets.some((preset) => preset.id === presetId);
+
+      if (exists) {
+        if (currentPresets.length === 1) {
+          return currentPresets;
+        }
+
+        const nextPresets = currentPresets.filter((preset) => preset.id !== presetId);
+        if (previewPresetId === presetId && nextPresets.length) {
+          setPreviewPresetId(nextPresets[0].id);
+        }
+
+        return nextPresets;
+      }
+
+      const presetToAdd = EXPORT_PRESETS.find((preset) => preset.id === presetId);
+      if (!presetToAdd) {
+        return currentPresets;
+      }
+
+      return [...currentPresets, presetToAdd];
+    });
+  }, [previewPresetId]);
 
   const value = useMemo<CreateFlowContextValue>(
     () => ({
@@ -323,9 +545,16 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       screenshotOffsetY,
       exportName,
       previewPreset,
+      exportQuality,
       frameEnabled,
+      applyPreviewToAll,
+      previewTargetSlideIds: resolvedPreviewTargetSlideIds,
       isExporting,
       renderControls,
+      defaultRenderControls: globalRenderControls,
+      slideRenderControlsById,
+      defaultFrameEnabled,
+      slideFrameEnabledById,
       handleFilesSelected,
       setActiveSlideIndex,
       handleTitleChange,
@@ -347,8 +576,11 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       setScreenshotOffsetY,
       setExportName,
       setPreviewPresetId,
+      toggleExportPreset,
+      setExportQuality,
+      setApplyPreviewToAll,
+      togglePreviewTargetSlideId,
       setFrameEnabled,
-      handlePresetToggle,
       removeSlide,
       handleExport,
     }),
@@ -359,12 +591,19 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       customBackgroundColor,
       customBackgroundOpacity,
       customTextColor,
+      defaultFrameEnabled,
+      globalRenderControls,
       fontFamilyId,
       layout,
+      exportQuality,
       frameEnabled,
+      applyPreviewToAll,
       isExporting,
       previewPreset,
+      resolvedPreviewTargetSlideIds,
       renderControls,
+      slideFrameEnabledById,
+      slideRenderControlsById,
       selectedPresets,
       selectedTemplate,
       slides,
@@ -379,10 +618,27 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       exportName,
       handleExport,
       handleFilesSelected,
-      handlePresetToggle,
       handleSubtitleChange,
       handleTitleChange,
       removeSlide,
+      setBackgroundStyleId,
+      setCustomBackgroundColor,
+      setCustomBackgroundOpacity,
+      setCustomTextColor,
+      setFontFamilyId,
+      setFrameEnabled,
+      setLayout,
+      setScreenshotOffsetX,
+      setScreenshotOffsetY,
+      setScreenshotScaleMultiplier,
+      setSubtitleScaleMultiplier,
+      setSubtitleSpacingMultiplier,
+      setTextOffsetX,
+      setTextOffsetY,
+      setTitleScaleMultiplier,
+      setApplyPreviewToAll,
+      togglePreviewTargetSlideId,
+      toggleExportPreset,
     ],
   );
 

@@ -278,26 +278,16 @@ export async function renderSlideToCanvas(
     const frameBoundsHeight =
       (desiredScreenHeight / template.frame.screenSlot.height) * screenshotScaleMultiplier;
 
-    const availableOffsetX = slotWidth - frameBoundsWidth;
-
     const normalizedOffsetX = Math.max(-1, Math.min(1, screenshotOffsetX / 100));
     const normalizedOffsetY = Math.max(-1, Math.min(1, screenshotOffsetY / 100));
-    const preferredFrameBoundsY = preset.height * template.frame.bounds.top;
-    const minFrameBoundsY = slotTop;
-    const maxFrameBoundsY = slotTop + slotHeight - frameBoundsHeight;
+    const centeredFrameBoundsX = slotX + (slotWidth - frameBoundsWidth) / 2;
+    const centeredFrameBoundsY = slotTop + (slotHeight - frameBoundsHeight) / 2;
 
     const frameBoundsX =
       template.frame.bounds.align === "center"
-        ? slotX + availableOffsetX / 2 + (slotWidth * 0.18 * normalizedOffsetX)
+        ? centeredFrameBoundsX + (slotWidth * 0.18 * normalizedOffsetX)
         : paddingX;
-    const frameBoundsY =
-      Math.min(
-        maxFrameBoundsY,
-        Math.max(
-          minFrameBoundsY,
-          preferredFrameBoundsY + (slotHeight * 0.18 * normalizedOffsetY),
-        ),
-      );
+    const frameBoundsY = centeredFrameBoundsY + (slotHeight * 0.18 * normalizedOffsetY);
 
     const screenX = frameBoundsX + frameBoundsWidth * template.frame.screenSlot.x;
     const screenY = frameBoundsY + frameBoundsHeight * template.frame.screenSlot.y;
@@ -329,9 +319,19 @@ export async function generateSlideBlob(
   template: PreviewTemplateId = DEFAULT_PREVIEW_TEMPLATE_ID,
   frameEnabled = true,
   controls?: RenderControls,
+  qualityScale = 1,
 ) {
   const canvas = document.createElement("canvas");
-  await renderSlideToCanvas(canvas, slide, preset, { template, frameEnabled, controls });
+  await renderSlideToCanvas(
+    canvas,
+    slide,
+    {
+      ...preset,
+      width: Math.round(preset.width * qualityScale),
+      height: Math.round(preset.height * qualityScale),
+    },
+    { template, frameEnabled, controls },
+  );
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {

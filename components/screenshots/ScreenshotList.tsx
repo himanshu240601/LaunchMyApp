@@ -4,8 +4,6 @@ import { ChangeEvent, useId, useState } from "react";
 import Image from "next/image";
 import { UploadCloud, X } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import type { Slide } from "@/lib/screenshot/presets";
 
 type ScreenshotListProps = {
@@ -47,12 +45,6 @@ export function ScreenshotList({
       return;
     }
 
-    if (selectedFiles.length > availableSlots) {
-      setError(`You can upload only ${availableSlots} more screenshot${availableSlots === 1 ? "" : "s"}.`);
-      event.target.value = "";
-      return;
-    }
-
     const hasNonImageFile = selectedFiles.some((file) => !file.type.startsWith("image/"));
     if (hasNonImageFile) {
       setError("Please select image files only.");
@@ -60,8 +52,13 @@ export function ScreenshotList({
       return;
     }
 
-    setError(null);
-    onFilesSelected(selectedFiles);
+    const acceptedFiles = selectedFiles.slice(0, availableSlots);
+    setError(
+      selectedFiles.length > availableSlots
+        ? `Only the first ${availableSlots} screenshot${availableSlots === 1 ? "" : "s"} were added.`
+        : null,
+    );
+    onFilesSelected(acceptedFiles);
     event.target.value = "";
   }
 
@@ -80,10 +77,7 @@ export function ScreenshotList({
           {slides.length > 0 && canUploadMore ? (
             <label
               htmlFor={inputId}
-              className={cn(
-                buttonVariants({ size: "default", className: "h-10 gap-2 rounded-full px-4" }),
-                "cursor-pointer",
-              )}
+              className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-[#ff5a12] px-4 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(255,90,18,0.24)] transition-colors hover:bg-[#f0530d]"
             >
               <UploadCloud className="h-4 w-4" />
               Upload
@@ -153,13 +147,13 @@ export function ScreenshotList({
           <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
             Add PNG or JPG screenshots here to start writing titles and subtitles.
           </p>
+          <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground/90">
+            iPhone screenshots work best here.
+          </p>
           {canUploadMore ? (
             <label
               htmlFor={inputId}
-              className={cn(
-                buttonVariants({ className: "mt-5 gap-2 rounded-full" }),
-                "cursor-pointer",
-              )}
+              className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#ff5a12] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(255,90,18,0.24)] transition-colors hover:bg-[#f0530d]"
             >
               <UploadCloud className="h-4 w-4" />
               Upload Files

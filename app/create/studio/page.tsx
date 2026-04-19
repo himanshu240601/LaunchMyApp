@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { sanitizeExportName } from "@/app/create/create-flow-context";
@@ -11,6 +11,7 @@ import { PreviewCanvas } from "@/components/screenshots/PreviewCanvas";
 import { ScreenshotList } from "@/components/screenshots/ScreenshotList";
 import { SlideEditor } from "@/components/screenshots/SlideEditor";
 import { useCreateFlow } from "@/app/create/create-flow-context";
+import { savePreviewSnapshot } from "@/lib/screenshot/preview-snapshot";
 
 export default function StudioPage() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function StudioPage() {
     slides,
     activeSlide,
     activeSlideIndex,
+    selectedPresets,
+    applyPreviewToAll,
     setActiveSlideIndex,
     handleFilesSelected,
     removeSlide,
@@ -37,9 +40,16 @@ export default function StudioPage() {
     setFrameEnabled,
     exportName,
     previewPreset,
+    exportQuality,
     isExporting,
     renderControls,
+    defaultRenderControls,
+    slideRenderControlsById,
+    defaultFrameEnabled,
+    slideFrameEnabledById,
     setExportName,
+    toggleExportPreset,
+    setApplyPreviewToAll,
     backgroundStyleId,
     setBackgroundStyleId,
     fontFamilyId,
@@ -77,9 +87,64 @@ export default function StudioPage() {
     }
   }, [router, slides.length]);
 
+  useEffect(() => {
+    if (!slides.length) {
+      return;
+    }
+
+    void savePreviewSnapshot({
+      createdAt: Date.now(),
+      exportName: sanitizeExportName(exportName),
+      slides,
+      preset: previewPreset,
+      selectedPresets,
+      exportQuality,
+      template: selectedTemplate,
+      frameEnabled,
+      controls: renderControls,
+      defaultFrameEnabled,
+      frameEnabledBySlideId: slideFrameEnabledById,
+      defaultControls: defaultRenderControls,
+      controlsBySlideId: slideRenderControlsById,
+    });
+  }, [
+    defaultFrameEnabled,
+    defaultRenderControls,
+    exportName,
+    exportQuality,
+    frameEnabled,
+    previewPreset,
+    renderControls,
+    selectedPresets,
+    selectedTemplate,
+    slideFrameEnabledById,
+    slideRenderControlsById,
+    slides,
+  ]);
+
   if (!slides.length) {
     return null;
   }
+
+  const openPreviewTab = () => {
+    window.open("/create/preview", "_blank", "noopener,noreferrer");
+
+    void savePreviewSnapshot({
+      createdAt: Date.now(),
+      exportName: sanitizeExportName(exportName),
+      slides,
+      preset: previewPreset,
+      selectedPresets,
+      exportQuality,
+      template: selectedTemplate,
+      frameEnabled,
+      controls: renderControls,
+      defaultFrameEnabled,
+      frameEnabledBySlideId: slideFrameEnabledById,
+      defaultControls: defaultRenderControls,
+      controlsBySlideId: slideRenderControlsById,
+    });
+  };
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
@@ -111,17 +176,28 @@ export default function StudioPage() {
             ) : null}
           </div>
         </div>
-        <Button
-          type="button"
-          className="relative z-10 gap-2 rounded-full"
-          onClick={() => {
-            void handleExport();
-          }}
-          disabled={isExporting || Boolean(exportNameError)}
-        >
-          <Download className="h-4 w-4" />
-          {isExporting ? "Exporting..." : "Export"}
-        </Button>
+        <div className="relative z-10 flex items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            className="gap-2 rounded-full border border-border bg-white text-foreground shadow-none ring-0 hover:bg-white"
+            onClick={openPreviewTab}
+          >
+            <Eye className="h-4 w-4" />
+            Preview
+          </Button>
+          <Button
+            type="button"
+            className="gap-2 rounded-full"
+            onClick={() => {
+              void handleExport();
+            }}
+            disabled={isExporting || Boolean(exportNameError)}
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? "Exporting..." : "Export"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid min-h-0 flex-1 items-start gap-3 xl:grid-cols-[375px_minmax(0,1fr)_400px]">
@@ -152,7 +228,11 @@ export default function StudioPage() {
               onLayoutChange={setLayout}
               frameEnabled={frameEnabled}
               onFrameToggle={setFrameEnabled}
+              applyPreviewToAll={applyPreviewToAll}
+              onApplyPreviewToAllChange={setApplyPreviewToAll}
               previewPreset={previewPreset}
+              selectedPresets={selectedPresets}
+              onToggleExportPreset={toggleExportPreset}
               backgroundStyleId={backgroundStyleId}
               onBackgroundStyleChange={setBackgroundStyleId}
               fontFamilyId={fontFamilyId}
@@ -213,7 +293,11 @@ export default function StudioPage() {
               frameEnabled={frameEnabled}
               onFrameToggle={setFrameEnabled}
               showDesignControls
+              applyPreviewToAll={applyPreviewToAll}
+              onApplyPreviewToAllChange={setApplyPreviewToAll}
               previewPreset={previewPreset}
+              selectedPresets={selectedPresets}
+              onToggleExportPreset={toggleExportPreset}
               backgroundStyleId={backgroundStyleId}
               onBackgroundStyleChange={setBackgroundStyleId}
               fontFamilyId={fontFamilyId}

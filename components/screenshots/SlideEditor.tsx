@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Smartphone } from "lucide-react";
+import { Check, Smartphone } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
+  EXPORT_PRESETS,
   type Slide,
 } from "@/lib/screenshot/presets";
 import {
@@ -37,7 +39,11 @@ type SlideEditorProps = {
   frameEnabled: boolean;
   onFrameToggle: (enabled: boolean) => void;
   showDesignControls?: boolean;
+  applyPreviewToAll?: boolean;
+  onApplyPreviewToAllChange?: (value: boolean) => void;
   previewPreset: ExportPreset;
+  selectedPresets: ExportPreset[];
+  onToggleExportPreset: (presetId: string) => void;
   backgroundStyleId: BackgroundStyleId;
   onBackgroundStyleChange: (backgroundStyleId: BackgroundStyleId) => void;
   fontFamilyId: FontFamilyId;
@@ -80,7 +86,11 @@ export function SlideEditor({
   frameEnabled,
   onFrameToggle,
   showDesignControls = false,
+  applyPreviewToAll = true,
+  onApplyPreviewToAllChange,
   previewPreset,
+  selectedPresets,
+  onToggleExportPreset,
   backgroundStyleId,
   onBackgroundStyleChange,
   fontFamilyId,
@@ -105,7 +115,8 @@ export function SlideEditor({
   panelless = false,
   hideHeader = false,
 }: SlideEditorProps) {
-  const [activeDesignTab, setActiveDesignTab] = useState<"settings" | "templates">("settings");
+  const [activeDesignTab, setActiveDesignTab] = useState<"settings" | "templates" | "export">("settings");
+  const [showApplyAllDialog, setShowApplyAllDialog] = useState(false);
   const normalizedColorValue = /^#([0-9a-fA-F]{6})$/.test(customBackgroundColor)
     ? customBackgroundColor
     : "#ffffff";
@@ -206,8 +217,58 @@ export function SlideEditor({
     </div>
   );
 
+  const handleApplyPreviewToggle = () => {
+    if (!onApplyPreviewToAllChange) {
+      return;
+    }
+
+    if (!applyPreviewToAll) {
+      setShowApplyAllDialog(true);
+      return;
+    }
+
+    onApplyPreviewToAllChange(!applyPreviewToAll);
+  };
+
+  const handleConfirmApplyAll = () => {
+    onApplyPreviewToAllChange?.(true);
+    setShowApplyAllDialog(false);
+  };
+
   return (
     <div className={panelless ? "flex h-full min-h-0 flex-col" : "flex h-full min-h-0 flex-col rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft"}>
+      {showApplyAllDialog ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(26,14,9,0.42)] px-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-[1.75rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,245,239,0.98))] p-5 shadow-[0_30px_80px_rgba(65,33,20,0.2)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Apply To All
+            </p>
+            <h4 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              Match all screens to this design?
+            </h4>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Turning this on will update every screenshot design to match the currently selected screen.
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="rounded-full border border-border bg-white text-foreground shadow-none ring-0 hover:bg-white"
+                onClick={() => setShowApplyAllDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="rounded-full"
+                onClick={handleConfirmApplyAll}
+              >
+                Apply To All
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {!hideHeader ? (
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -264,15 +325,18 @@ export function SlideEditor({
           {showDesignControls ? (
             <>
               <div className="rounded-[1.35rem] border border-border/80 bg-background/80 p-1">
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-3 gap-1">
                   {[
-                    { id: "settings", label: "Settings" },
+                    { id: "settings", label: "Properties" },
                     { id: "templates", label: "Templates" },
+                    { id: "export", label: "Settings" },
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setActiveDesignTab(tab.id as "settings" | "templates")}
+                      onClick={() =>
+                        setActiveDesignTab(tab.id as "settings" | "templates" | "export")
+                      }
                       className={[
                         "rounded-[1rem] px-3 py-2 text-sm font-medium transition-colors",
                         activeDesignTab === tab.id
@@ -288,6 +352,35 @@ export function SlideEditor({
 
               {activeDesignTab === "settings" ? (
                 <>
+                  <div className="space-y-2.5 rounded-[1.5rem] border border-border bg-background/80 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Apply to all screens</p>
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          {applyPreviewToAll
+                            ? "Turn off to edit single screens."
+                            : "Turn on to apply the same style across screens."}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleApplyPreviewToggle}
+                        className={[
+                          "relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors",
+                          applyPreviewToAll ? "bg-primary" : "bg-border",
+                        ].join(" ")}
+                        aria-pressed={applyPreviewToAll}
+                      >
+                        <span
+                          className={[
+                            "absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                            applyPreviewToAll ? "translate-x-6" : "translate-x-1",
+                          ].join(" ")}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="space-y-2.5">
                     <p className="text-sm font-medium text-foreground">Mockup Frame</p>
                     <button
@@ -546,30 +639,73 @@ export function SlideEditor({
                   </div>
 
                 </>
+              ) : activeDesignTab === "export" ? (
+                <div className="space-y-5">
+                  <div className="rounded-[1.25rem] border border-border bg-background/80 px-4 py-3">
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Select the device resolution to export.
+                    </p>
+                  </div>
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-foreground">Device Frame</p>
+                    <div className="grid gap-2">
+                      {EXPORT_PRESETS.map((preset) => {
+                        const isSelected = selectedPresets.some((item) => item.id === preset.id);
+
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => onToggleExportPreset(preset.id)}
+                            className={[
+                              "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors",
+                              isSelected
+                                ? "border-primary/30 bg-orange-50/80"
+                                : "border-border bg-white hover:border-primary/20",
+                            ].join(" ")}
+                          >
+                            <div>
+                              <span className="block font-medium text-foreground">{preset.label}</span>
+                              <span className="block text-sm text-muted-foreground">
+                                {preset.width} × {preset.height}
+                              </span>
+                            </div>
+                            <span
+                              className={[
+                                "flex h-5 w-5 items-center justify-center rounded-full border transition-colors",
+                                isSelected
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-white text-transparent",
+                              ].join(" ")}
+                              aria-hidden="true"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-2.5">
                   <p className="text-sm font-medium text-foreground">Templates</p>
                   <div className="grid gap-2">
-                    {SCREENSHOT_TEMPLATES.map((template) => {
-                      const isDefaultTemplate = template.id === "default";
-                      return (
+                    {SCREENSHOT_TEMPLATES.filter((template) => template.id === "default").map((template) => (
                       <button
                         key={template.id}
                         type="button"
                         onClick={() => onTemplateChange(template.id)}
-                        disabled={!isDefaultTemplate}
                         className={[
                           "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors",
                           selectedTemplate === template.id
                             ? "border-primary/30 bg-orange-50/80"
                             : "border-border bg-white hover:border-primary/20",
-                          !isDefaultTemplate ? "cursor-not-allowed opacity-45" : "",
                         ].join(" ")}
                       >
                         <span className="font-medium text-foreground">{template.label}</span>
                       </button>
-                      );
-                    })}
+                    ))}
                   </div>
                 </div>
               )}
