@@ -84,7 +84,7 @@ export function UploadDropzone({
   return (
     <div
       className={[
-        "rounded-[2rem] border border-dashed bg-white/80 p-6 text-center shadow-soft transition-colors",
+        "flex min-h-0 flex-1 flex-col justify-center rounded-[2rem] border border-dashed bg-white/80 p-6 text-center shadow-soft transition-colors",
         isDragging && canUploadMore ? "border-primary bg-orange-50/80" : "border-border",
         !canUploadMore ? "opacity-90" : "",
       ].join(" ")}
@@ -146,12 +146,12 @@ export function UploadDropzone({
                   <X className="h-4 w-4" />
                 </button>
               ) : null}
-              <div className="relative aspect-square overflow-hidden rounded-[1.25rem] border border-border bg-white shadow-[0_10px_24px_rgba(65,33,20,0.05)]">
+              <div className="relative aspect-square overflow-hidden rounded-[1.25rem] border border-border bg-slate-50 shadow-[0_10px_24px_rgba(65,33,20,0.05)]">
                 <Image
                   src={slide.image}
                   alt={slide.title}
                   fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.02]"
                   unoptimized
                 />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-[rgba(29,16,10,0.68)] via-[rgba(29,16,10,0.18)] to-transparent px-3 py-2">

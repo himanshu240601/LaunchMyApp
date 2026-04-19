@@ -6,17 +6,25 @@ import {
   getScreenshotTemplate,
   type BackgroundStyleId,
   type FontFamilyId,
+  type LayoutId,
   type PreviewTemplateId,
 } from "@/lib/screenshot/templates";
 
 export type RenderControls = {
   backgroundStyleId?: BackgroundStyleId;
+  customBackgroundColor?: string;
+  customBackgroundOpacity?: number;
+  customTextColor?: string;
   fontFamilyId?: FontFamilyId;
   titleScaleMultiplier?: number;
   subtitleScaleMultiplier?: number;
+  subtitleSpacingMultiplier?: number;
+  textOffsetX?: number;
+  textOffsetY?: number;
   screenshotScaleMultiplier?: number;
   screenshotOffsetX?: number;
   screenshotOffsetY?: number;
+  layout?: LayoutId;
 };
 
 type RenderSlideOptions = {
@@ -60,6 +68,58 @@ function wrapText(
   return lines;
 }
 
+function hexToRgba(hex: string, opacity: number) {
+  const normalized = hex.replace("#", "");
+  const compactHex = /^[0-9a-fA-F]{3}$/.test(normalized)
+    ? normalized
+        .split("")
+        .map((char) => char + char)
+        .join("")
+    : normalized;
+  const safeHex = /^[0-9a-fA-F]{6}$/.test(compactHex) ? compactHex : "ffffff";
+
+  const red = Number.parseInt(safeHex.slice(0, 2), 16);
+  const green = Number.parseInt(safeHex.slice(2, 4), 16);
+  const blue = Number.parseInt(safeHex.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${Math.min(1, Math.max(0, opacity))})`;
+}
+
+function getLayoutMetrics(
+  layout: LayoutId,
+  preset: ExportPreset,
+  template: ReturnType<typeof getScreenshotTemplate>,
+) {
+  if (layout === "image-top-text-bottom") {
+    const screenshotTop = 0.11;
+    const screenshotHeight = Math.min(template.screenshotSlot.height, 0.56);
+    const titleTop = Math.min(screenshotTop + screenshotHeight + 0.05, 0.78);
+
+    return {
+      titleTop,
+      slotTop: preset.height * screenshotTop,
+      slotHeight: preset.height * screenshotHeight,
+    };
+  }
+
+  return {
+    titleTop: template.title.top,
+    slotTop: preset.height * template.screenshotSlot.top,
+    slotHeight: preset.height * template.screenshotSlot.height,
+  };
+}
+
+function getSubtitleTop(
+  layoutMetrics: ReturnType<typeof getLayoutMetrics>,
+  template: ReturnType<typeof getScreenshotTemplate>,
+  subtitleSpacingMultiplier: number,
+) {
+  const defaultOffset = template.subtitle.top - template.title.top;
+  const adjustedOffset = defaultOffset * subtitleSpacingMultiplier;
+
+  return Math.min(layoutMetrics.titleTop + adjustedOffset, 0.9);
+}
+
 export async function renderSlideToCanvas(
   canvas: HTMLCanvasElement,
   slide: Slide,
@@ -74,16 +134,30 @@ export async function renderSlideToCanvas(
   const template = getScreenshotTemplate(options.template ?? DEFAULT_PREVIEW_TEMPLATE_ID);
   const frameEnabled = options.frameEnabled ?? true;
   const controls = options.controls ?? {};
+  const customBackgroundOpacity = controls.customBackgroundOpacity ?? 1;
   const backgroundStyle = controls.backgroundStyleId
     ? getBackgroundStyle(controls.backgroundStyleId)?.background
     : null;
-  const background = backgroundStyle ?? template.background;
+  const background =
+    controls.customBackgroundColor && template.id === "default"
+      ? {
+          kind: "soft-orbs" as const,
+          base: hexToRgba(controls.customBackgroundColor, customBackgroundOpacity),
+          accentA: "rgba(255, 255, 255, 0)",
+          accentB: "rgba(255, 255, 255, 0)",
+        }
+      : backgroundStyle ?? template.background;
   const fontFamilyStack = getFontFamilyStack(controls.fontFamilyId ?? "display");
   const titleScaleMultiplier = controls.titleScaleMultiplier ?? 1.2;
   const subtitleScaleMultiplier = controls.subtitleScaleMultiplier ?? 1.15;
+  const subtitleSpacingMultiplier = controls.subtitleSpacingMultiplier ?? 1;
+  const textOffsetX = controls.textOffsetX ?? 0;
+  const textOffsetY = controls.textOffsetY ?? 0;
   const screenshotScaleMultiplier = controls.screenshotScaleMultiplier ?? 1;
   const screenshotOffsetX = controls.screenshotOffsetX ?? 0;
   const screenshotOffsetY = controls.screenshotOffsetY ?? 0;
+  const customTextColor = controls.customTextColor;
+  const layout = controls.layout ?? "text-top-image-bottom";
 
   canvas.width = preset.width;
   canvas.height = preset.height;
@@ -121,15 +195,21 @@ export async function renderSlideToCanvas(
     frameEnabled && template.frame ? await loadImage(template.frame.assetPath).catch(() => null) : null;
 
   const paddingX = preset.width * template.spacing.paddingX;
-  const slotTop = preset.height * template.screenshotSlot.top;
+  const layoutMetrics = getLayoutMetrics(layout, preset, template);
+  const subtitleTop = getSubtitleTop(layoutMetrics, template, subtitleSpacingMultiplier);
+  const normalizedTextOffsetX = Math.max(-1, Math.min(1, textOffsetX / 100));
+  const normalizedTextOffsetY = Math.max(-1, Math.min(1, textOffsetY / 100));
+  const textX = preset.width / 2 + preset.width * 0.18 * normalizedTextOffsetX;
+  const textYOffset = preset.height * 0.12 * normalizedTextOffsetY;
+  const slotTop = layoutMetrics.slotTop;
   const slotWidth = preset.width * template.screenshotSlot.width;
-  const slotHeight = preset.height * template.screenshotSlot.height;
+  const slotHeight = layoutMetrics.slotHeight;
   const slotX =
     template.screenshotSlot.align === "center"
       ? (preset.width - slotWidth) / 2
       : paddingX;
 
-  context.fillStyle = template.title.color;
+  context.fillStyle = customTextColor || template.title.color;
   context.font = `700 ${Math.round(
     preset.width * template.title.fontScale * titleScaleMultiplier,
   )}px ${fontFamilyStack}`;
@@ -143,12 +223,14 @@ export async function renderSlideToCanvas(
   lines.forEach((line, index) => {
     context.fillText(
       line,
-      preset.width / 2,
-      preset.height * template.title.top + index * preset.width * template.title.lineHeight,
+      textX,
+      preset.height * layoutMetrics.titleTop +
+        textYOffset +
+        index * preset.width * template.title.lineHeight,
     );
   });
 
-  context.fillStyle = template.subtitle.color;
+  context.fillStyle = customTextColor || template.subtitle.color;
   context.font = `500 ${Math.round(
     preset.width * template.subtitle.fontScale * subtitleScaleMultiplier,
   )}px ${fontFamilyStack}`;
@@ -160,8 +242,9 @@ export async function renderSlideToCanvas(
   subtitleLines.forEach((line, index) => {
     context.fillText(
       line,
-      preset.width / 2,
-      preset.height * template.subtitle.top +
+      textX,
+      preset.height * subtitleTop +
+        textYOffset +
         index * preset.width * template.subtitle.lineHeight,
     );
   });
@@ -184,13 +267,37 @@ export async function renderSlideToCanvas(
     context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
     context.restore();
   } else {
-    const frameBoundsWidth = preset.width * template.frame.bounds.width;
-    const frameBoundsHeight = preset.height * template.frame.bounds.height;
+    const targetFill = 0.97;
+    const screenScale =
+      Math.min(slotWidth / image.width, slotHeight / image.height) * targetFill;
+    const desiredScreenWidth = image.width * screenScale;
+    const desiredScreenHeight = image.height * screenScale;
+
+    const frameBoundsWidth =
+      (desiredScreenWidth / template.frame.screenSlot.width) * screenshotScaleMultiplier;
+    const frameBoundsHeight =
+      (desiredScreenHeight / template.frame.screenSlot.height) * screenshotScaleMultiplier;
+
+    const availableOffsetX = slotWidth - frameBoundsWidth;
+
+    const normalizedOffsetX = Math.max(-1, Math.min(1, screenshotOffsetX / 100));
+    const normalizedOffsetY = Math.max(-1, Math.min(1, screenshotOffsetY / 100));
+    const preferredFrameBoundsY = preset.height * template.frame.bounds.top;
+    const minFrameBoundsY = slotTop;
+    const maxFrameBoundsY = slotTop + slotHeight - frameBoundsHeight;
+
     const frameBoundsX =
       template.frame.bounds.align === "center"
-        ? (preset.width - frameBoundsWidth) / 2
+        ? slotX + availableOffsetX / 2 + (slotWidth * 0.18 * normalizedOffsetX)
         : paddingX;
-    const frameBoundsY = preset.height * template.frame.bounds.top;
+    const frameBoundsY =
+      Math.min(
+        maxFrameBoundsY,
+        Math.max(
+          minFrameBoundsY,
+          preferredFrameBoundsY + (slotHeight * 0.18 * normalizedOffsetY),
+        ),
+      );
 
     const screenX = frameBoundsX + frameBoundsWidth * template.frame.screenSlot.x;
     const screenY = frameBoundsY + frameBoundsHeight * template.frame.screenSlot.y;
@@ -198,17 +305,11 @@ export async function renderSlideToCanvas(
     const screenHeight = frameBoundsHeight * template.frame.screenSlot.height;
     const screenRadius = frameBoundsWidth * template.frame.screenSlot.borderRadius;
 
-    const scale =
-      Math.min(screenWidth / image.width, screenHeight / image.height) *
-      screenshotScaleMultiplier;
+    const scale = Math.min(screenWidth / image.width, screenHeight / image.height);
     const drawWidth = image.width * scale;
     const drawHeight = image.height * scale;
-    const normalizedOffsetX = screenshotOffsetX / 100;
-    const normalizedOffsetY = screenshotOffsetY / 100;
-    const drawX =
-      screenX + (screenWidth - drawWidth) / 2 + screenWidth * 0.14 * normalizedOffsetX;
-    const drawY =
-      screenY + (screenHeight - drawHeight) / 2 + screenHeight * 0.14 * normalizedOffsetY;
+    const drawX = screenX + (screenWidth - drawWidth) / 2;
+    const drawY = screenY + (screenHeight - drawHeight) / 2;
 
     context.save();
     context.beginPath();
@@ -220,13 +321,6 @@ export async function renderSlideToCanvas(
     context.drawImage(frameAsset, frameBoundsX, frameBoundsY, frameBoundsWidth, frameBoundsHeight);
   }
 
-  context.fillStyle = template.footerColor;
-  context.font = `500 ${Math.round(preset.width * 0.022)}px ${fontFamilyStack}`;
-  context.fillText(
-    "LaunchMyApp Screenshot Generator",
-    preset.width / 2,
-    preset.height * template.spacing.footerY,
-  );
 }
 
 export async function generateSlideBlob(

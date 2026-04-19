@@ -1,66 +1,180 @@
 "use client";
 
+import { ChangeEvent, useId, useState } from "react";
 import Image from "next/image";
+import { UploadCloud, X } from "lucide-react";
 
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { Slide } from "@/lib/screenshot/presets";
 
 type ScreenshotListProps = {
   activeSlideIndex: number;
   slides: Slide[];
   onSelect: (index: number) => void;
+  onFilesSelected?: (files: File[]) => void;
+  onRemoveSlide?: (slideId: string) => void;
 };
 
-export function ScreenshotList({ activeSlideIndex, slides, onSelect }: ScreenshotListProps) {
+const MAX_FILES_TOTAL = 4;
+
+export function ScreenshotList({
+  activeSlideIndex,
+  slides,
+  onSelect,
+  onFilesSelected,
+  onRemoveSlide,
+}: ScreenshotListProps) {
+  const inputId = useId();
+  const [error, setError] = useState<string | null>(null);
+  const remainingSlots = Math.max(0, MAX_FILES_TOTAL - slides.length);
+  const canUploadMore = Boolean(onFilesSelected) && remainingSlots > 0;
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+
+    if (!files || !onFilesSelected || !canUploadMore) {
+      event.target.value = "";
+      return;
+    }
+
+    const selectedFiles = Array.from(files);
+    const availableSlots = remainingSlots;
+
+    if (!selectedFiles.length) {
+      setError("No files were selected.");
+      event.target.value = "";
+      return;
+    }
+
+    if (selectedFiles.length > availableSlots) {
+      setError(`You can upload only ${availableSlots} more screenshot${availableSlots === 1 ? "" : "s"}.`);
+      event.target.value = "";
+      return;
+    }
+
+    const hasNonImageFile = selectedFiles.some((file) => !file.type.startsWith("image/"));
+    if (hasNonImageFile) {
+      setError("Please select image files only.");
+      event.target.value = "";
+      return;
+    }
+
+    setError(null);
+    onFilesSelected(selectedFiles);
+    event.target.value = "";
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft">
       <div className="mb-5 shrink-0">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Screens
-        </h3>
+        <div className="flex items-center justify-between gap-3 pr-1">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Screens
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {slides.length}/{MAX_FILES_TOTAL} uploaded
+            </p>
+          </div>
+          {slides.length > 0 && canUploadMore ? (
+            <label
+              htmlFor={inputId}
+              className={cn(
+                buttonVariants({ size: "default", className: "h-10 gap-2 rounded-full px-4" }),
+                "cursor-pointer",
+              )}
+            >
+              <UploadCloud className="h-4 w-4" />
+              Upload
+            </label>
+          ) : null}
+        </div>
+        {error ? <p className="mt-3 text-sm text-primary">{error}</p> : null}
       </div>
       {slides.length ? (
         <div className="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
           {slides.map((slide, index) => (
-            <button
+            <div
               key={slide.id}
-              type="button"
-              onClick={() => onSelect(index)}
               className={[
-                "flex w-full items-center gap-3 rounded-[1.35rem] border px-3 py-3 text-left transition-all duration-200",
+                "group relative rounded-[1.35rem] border transition-all duration-200",
                 activeSlideIndex === index
                   ? "border-primary bg-primary/10 shadow-[0_10px_24px_rgba(255,122,38,0.14)]"
                   : "border-border bg-white hover:border-primary/25 hover:bg-orange-50/40",
                 !slide.enabled ? "opacity-60" : "",
               ].join(" ")}
             >
-              <div
-                className={[
-                  "relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-slate-100",
-                  activeSlideIndex === index ? "border-primary/30" : "border-border",
-                ].join(" ")}
+              {onRemoveSlide ? (
+                <button
+                  type="button"
+                  onClick={() => onRemoveSlide(slide.id)}
+                  className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/80 bg-[rgba(29,16,10,0.78)] text-white shadow-[0_10px_20px_rgba(29,16,10,0.18)] transition-colors hover:bg-[rgba(29,16,10,0.9)]"
+                  aria-label={`Remove screen ${index + 1}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onSelect(index)}
+                className="flex w-full items-center gap-3 px-3 py-3 text-left"
               >
-                <Image src={slide.image} alt={slide.title} fill className="object-cover" unoptimized />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p
+                <div
                   className={[
-                    "text-xs font-semibold uppercase tracking-[0.16em]",
-                    activeSlideIndex === index ? "text-primary" : "text-muted-foreground",
+                    "relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-slate-50 p-1",
+                    activeSlideIndex === index ? "border-primary/30" : "border-border",
                   ].join(" ")}
                 >
-                  Screen {index + 1}
-                </p>
-                <p className="mt-1 truncate font-semibold text-foreground">{slide.title}</p>
-                <p className="mt-1 truncate text-sm text-muted-foreground">{slide.subtitle}</p>
-              </div>
-            </button>
+                  <Image src={slide.image} alt={slide.title} fill className="object-contain" unoptimized />
+                </div>
+                <div className="min-w-0 flex-1 pr-8">
+                  <p
+                    className={[
+                      "text-xs font-semibold uppercase tracking-[0.16em]",
+                      activeSlideIndex === index ? "text-primary" : "text-muted-foreground",
+                    ].join(" ")}
+                  >
+                    Screen {index + 1}
+                  </p>
+                  <p className="mt-1 truncate font-semibold text-foreground">{slide.title}</p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">{slide.subtitle}</p>
+                </div>
+              </button>
+            </div>
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-border bg-slate-50 px-4 py-8 text-center text-sm leading-6 text-muted-foreground">
-          No screenshots yet. Upload PNG or JPG files to build your first screen list.
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-slate-50 px-6 py-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <UploadCloud className="h-6 w-6" />
+          </div>
+          <p className="mt-4 text-sm font-medium text-foreground">Upload up to 4 screenshots</p>
+          <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
+            Add PNG or JPG screenshots here to start writing titles and subtitles.
+          </p>
+          {canUploadMore ? (
+            <label
+              htmlFor={inputId}
+              className={cn(
+                buttonVariants({ className: "mt-5 gap-2 rounded-full" }),
+                "cursor-pointer",
+              )}
+            >
+              <UploadCloud className="h-4 w-4" />
+              Upload Files
+            </label>
+          ) : null}
         </div>
       )}
+      <input
+        id={inputId}
+        className="hidden"
+        type="file"
+        accept="image/*"
+        multiple={remainingSlots > 1}
+        onChange={handleChange}
+      />
     </div>
   );
 }

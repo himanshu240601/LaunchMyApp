@@ -26,6 +26,7 @@ import {
   type BackgroundStyleId,
   DEFAULT_PREVIEW_TEMPLATE_ID,
   type FontFamilyId,
+  type LayoutId,
   type PreviewTemplateId,
 } from "@/lib/screenshot/templates";
 import { downloadZip } from "@/lib/screenshot/zip";
@@ -37,6 +38,12 @@ export function sanitizeExportName(value: string) {
   return cleaned || "Untitled_1";
 }
 
+const DEFAULT_TITLE_SIZE_PX = 128;
+const DEFAULT_SUBTITLE_SIZE_PX = 48;
+const DEFAULT_TITLE_BASE_SCALE = 1290 * 0.07;
+const DEFAULT_SUBTITLE_BASE_SCALE = 1290 * 0.03;
+const MAX_SCREENSHOTS = 4;
+
 type CreateFlowContextValue = {
   slides: Slide[];
   activeSlideIndex: number;
@@ -44,9 +51,16 @@ type CreateFlowContextValue = {
   selectedPresets: ExportPreset[];
   selectedTemplate: PreviewTemplateId;
   backgroundStyleId: BackgroundStyleId;
+  customBackgroundColor: string;
+  customBackgroundOpacity: number;
+  customTextColor: string;
   fontFamilyId: FontFamilyId;
+  layout: LayoutId;
   titleScaleMultiplier: number;
   subtitleScaleMultiplier: number;
+  subtitleSpacingMultiplier: number;
+  textOffsetX: number;
+  textOffsetY: number;
   screenshotScaleMultiplier: number;
   screenshotOffsetX: number;
   screenshotOffsetY: number;
@@ -61,9 +75,16 @@ type CreateFlowContextValue = {
   handleSubtitleChange: (subtitle: string) => void;
   setSelectedTemplate: (template: PreviewTemplateId) => void;
   setBackgroundStyleId: (backgroundStyleId: BackgroundStyleId) => void;
+  setCustomBackgroundColor: (value: string) => void;
+  setCustomBackgroundOpacity: (value: number) => void;
+  setCustomTextColor: (value: string) => void;
   setFontFamilyId: (fontFamilyId: FontFamilyId) => void;
+  setLayout: (layout: LayoutId) => void;
   setTitleScaleMultiplier: (value: number) => void;
   setSubtitleScaleMultiplier: (value: number) => void;
+  setSubtitleSpacingMultiplier: (value: number) => void;
+  setTextOffsetX: (value: number) => void;
+  setTextOffsetY: (value: number) => void;
   setScreenshotScaleMultiplier: (value: number) => void;
   setScreenshotOffsetX: (value: number) => void;
   setScreenshotOffsetY: (value: number) => void;
@@ -85,9 +106,20 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     useState<PreviewTemplateId>(DEFAULT_PREVIEW_TEMPLATE_ID);
   const [backgroundStyleId, setBackgroundStyleId] =
     useState<BackgroundStyleId>("template-default");
+  const [customBackgroundColor, setCustomBackgroundColor] = useState("#ffffff");
+  const [customBackgroundOpacity, setCustomBackgroundOpacity] = useState(1);
+  const [customTextColor, setCustomTextColor] = useState("#20130d");
   const [fontFamilyId, setFontFamilyId] = useState<FontFamilyId>("display");
-  const [titleScaleMultiplier, setTitleScaleMultiplier] = useState(1.22);
-  const [subtitleScaleMultiplier, setSubtitleScaleMultiplier] = useState(1.15);
+  const [layout, setLayout] = useState<LayoutId>("text-top-image-bottom");
+  const [titleScaleMultiplier, setTitleScaleMultiplier] = useState(
+    DEFAULT_TITLE_SIZE_PX / DEFAULT_TITLE_BASE_SCALE,
+  );
+  const [subtitleScaleMultiplier, setSubtitleScaleMultiplier] = useState(
+    DEFAULT_SUBTITLE_SIZE_PX / DEFAULT_SUBTITLE_BASE_SCALE,
+  );
+  const [subtitleSpacingMultiplier, setSubtitleSpacingMultiplier] = useState(1);
+  const [textOffsetX, setTextOffsetX] = useState(0);
+  const [textOffsetY, setTextOffsetY] = useState(0);
   const [screenshotScaleMultiplier, setScreenshotScaleMultiplier] = useState(1);
   const [screenshotOffsetX, setScreenshotOffsetX] = useState(0);
   const [screenshotOffsetY, setScreenshotOffsetY] = useState(0);
@@ -112,16 +144,30 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   const renderControls = useMemo<RenderControls>(
     () => ({
       backgroundStyleId,
+      customBackgroundColor,
+      customBackgroundOpacity,
+      customTextColor,
       fontFamilyId,
+      layout,
       titleScaleMultiplier,
       subtitleScaleMultiplier,
+      subtitleSpacingMultiplier,
+      textOffsetX,
+      textOffsetY,
       screenshotScaleMultiplier,
       screenshotOffsetX,
       screenshotOffsetY,
     }),
     [
       backgroundStyleId,
+      customBackgroundColor,
+      customBackgroundOpacity,
+      customTextColor,
       fontFamilyId,
+      layout,
+      subtitleSpacingMultiplier,
+      textOffsetX,
+      textOffsetY,
       screenshotScaleMultiplier,
       screenshotOffsetX,
       screenshotOffsetY,
@@ -134,8 +180,18 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     const timestamp = Date.now();
 
     setSlides((currentSlides) => {
+      const availableSlots = Math.max(0, MAX_SCREENSHOTS - currentSlides.length);
+      if (!availableSlots) {
+        return currentSlides;
+      }
+
+      const validFiles = files.filter((file) => file.type.startsWith("image/"));
+      if (!validFiles.length) {
+        return currentSlides;
+      }
+
       const startIndex = currentSlides.length;
-      const nextSlides = files.map((file, index) => {
+      const nextSlides = validFiles.slice(0, availableSlots).map((file, index) => {
         const objectUrl = URL.createObjectURL(file);
         objectUrlsRef.current.push(objectUrl);
 
@@ -232,7 +288,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
             renderControls,
           );
           files.push({
-            name: `${slide.order + 1}_${preset.id}.png`,
+            name: `${preset.id}/${slide.order + 1}_${preset.id}.png`,
             blob,
           });
         }
@@ -252,9 +308,16 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       selectedPresets,
       selectedTemplate,
       backgroundStyleId,
+      customBackgroundColor,
+      customBackgroundOpacity,
+      customTextColor,
       fontFamilyId,
+      layout,
       titleScaleMultiplier,
       subtitleScaleMultiplier,
+      subtitleSpacingMultiplier,
+      textOffsetX,
+      textOffsetY,
       screenshotScaleMultiplier,
       screenshotOffsetX,
       screenshotOffsetY,
@@ -269,9 +332,16 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       handleSubtitleChange,
       setSelectedTemplate,
       setBackgroundStyleId,
+      setCustomBackgroundColor,
+      setCustomBackgroundOpacity,
+      setCustomTextColor,
       setFontFamilyId,
+      setLayout,
       setTitleScaleMultiplier,
       setSubtitleScaleMultiplier,
+      setSubtitleSpacingMultiplier,
+      setTextOffsetX,
+      setTextOffsetY,
       setScreenshotScaleMultiplier,
       setScreenshotOffsetX,
       setScreenshotOffsetY,
@@ -286,7 +356,11 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       activeSlide,
       activeSlideIndex,
       backgroundStyleId,
+      customBackgroundColor,
+      customBackgroundOpacity,
+      customTextColor,
       fontFamilyId,
+      layout,
       frameEnabled,
       isExporting,
       previewPreset,
@@ -297,6 +371,9 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       screenshotOffsetX,
       screenshotOffsetY,
       screenshotScaleMultiplier,
+      textOffsetX,
+      textOffsetY,
+      subtitleSpacingMultiplier,
       subtitleScaleMultiplier,
       titleScaleMultiplier,
       exportName,

@@ -15,7 +15,6 @@ type PreviewCanvasProps = {
   template: PreviewTemplateId;
   frameEnabled: boolean;
   controls: RenderControls;
-  zoom?: number;
 };
 
 export function PreviewCanvas({
@@ -24,7 +23,6 @@ export function PreviewCanvas({
   template,
   frameEnabled,
   controls,
-  zoom = 1,
 }: PreviewCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -44,16 +42,20 @@ export function PreviewCanvas({
 
   return (
     <div className="h-full rounded-[1.75rem] bg-transparent">
-      <div className="no-scrollbar flex h-full min-h-0 items-center justify-center overflow-auto">
+      <div className="flex h-full min-h-0 items-center justify-center overflow-hidden">
         {slide ? (
-          <canvas
-            ref={canvasRef}
-            className="mx-auto block h-auto max-h-[calc(100vh-5rem)] w-auto max-w-full rounded-[1rem]"
+          <div
+            className="rounded-[1.1rem] border border-black/8 select-none"
             style={{
-              transform: `scale(${zoom})`,
+              transform: "scale(0.9)",
               transformOrigin: "center center",
             }}
-          />
+          >
+            <canvas
+              ref={canvasRef}
+              className="mx-auto block h-auto max-h-[calc(100vh-5rem)] w-auto max-w-full rounded-[1rem]"
+            />
+          </div>
         ) : (
           <div className="flex aspect-[1290/2796] items-center justify-center rounded-[1rem] border border-dashed border-border/70 bg-white/50 px-6 text-center text-sm leading-6 text-muted-foreground">
             Upload screenshots and move to the final step to preview your marketing layout.

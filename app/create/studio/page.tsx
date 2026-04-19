@@ -1,37 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, Minus, Plus, Smartphone } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { sanitizeExportName } from "@/app/create/create-flow-context";
 import { PreviewCanvas } from "@/components/screenshots/PreviewCanvas";
 import { ScreenshotList } from "@/components/screenshots/ScreenshotList";
 import { SlideEditor } from "@/components/screenshots/SlideEditor";
-import { EXPORT_PRESETS } from "@/lib/screenshot/presets";
 import { useCreateFlow } from "@/app/create/create-flow-context";
 
 export default function StudioPage() {
   const router = useRouter();
-  const [previewZoom, setPreviewZoom] = useState(0.8);
   const {
     slides,
     activeSlide,
     activeSlideIndex,
     setActiveSlideIndex,
+    handleFilesSelected,
+    removeSlide,
     handleTitleChange,
     handleSubtitleChange,
     selectedTemplate,
     setSelectedTemplate,
+    customBackgroundColor,
+    setCustomBackgroundColor,
+    customBackgroundOpacity,
+    setCustomBackgroundOpacity,
+    customTextColor,
+    setCustomTextColor,
+    layout,
+    setLayout,
     frameEnabled,
     setFrameEnabled,
     exportName,
     previewPreset,
     isExporting,
     renderControls,
-    setPreviewPresetId,
     setExportName,
     backgroundStyleId,
     setBackgroundStyleId,
@@ -41,6 +48,12 @@ export default function StudioPage() {
     setTitleScaleMultiplier,
     subtitleScaleMultiplier,
     setSubtitleScaleMultiplier,
+    subtitleSpacingMultiplier,
+    setSubtitleSpacingMultiplier,
+    textOffsetX,
+    setTextOffsetX,
+    textOffsetY,
+    setTextOffsetY,
     screenshotScaleMultiplier,
     setScreenshotScaleMultiplier,
     screenshotOffsetX,
@@ -60,7 +73,7 @@ export default function StudioPage() {
 
   useEffect(() => {
     if (!slides.length) {
-      router.replace("/create/upload");
+      router.replace("/create/edit");
     }
   }, [router, slides.length]);
 
@@ -75,6 +88,8 @@ export default function StudioPage() {
           <Link
             href="/create/edit"
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Back"
+            title="Back"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
@@ -110,26 +125,34 @@ export default function StudioPage() {
       </div>
 
       <div className="grid min-h-0 flex-1 items-start gap-3 xl:grid-cols-[375px_minmax(0,1fr)_400px]">
-        <aside className="flex min-h-0 flex-col gap-3 xl:h-full">
-          <div className="min-h-0 basis-[60%]">
+        <aside className="grid min-h-0 gap-3 xl:h-full xl:grid-rows-[minmax(0,1fr)_auto]">
+          <div className="min-h-0">
             <ScreenshotList
               activeSlideIndex={activeSlideIndex}
               slides={slides}
               onSelect={setActiveSlideIndex}
+              onFilesSelected={handleFilesSelected}
+              onRemoveSlide={removeSlide}
             />
           </div>
-          <div className="min-h-0 basis-[40%]">
+          <div className="min-h-0">
             <SlideEditor
               slide={activeSlide}
               onTitleChange={handleTitleChange}
               onSubtitleChange={handleSubtitleChange}
               selectedTemplate={selectedTemplate}
               onTemplateChange={setSelectedTemplate}
+              customBackgroundColor={customBackgroundColor}
+              onCustomBackgroundColorChange={setCustomBackgroundColor}
+              customBackgroundOpacity={customBackgroundOpacity}
+              onCustomBackgroundOpacityChange={setCustomBackgroundOpacity}
+              customTextColor={customTextColor}
+              onCustomTextColorChange={setCustomTextColor}
+              layout={layout}
+              onLayoutChange={setLayout}
               frameEnabled={frameEnabled}
               onFrameToggle={setFrameEnabled}
               previewPreset={previewPreset}
-              presets={EXPORT_PRESETS}
-              onPreviewPresetChange={setPreviewPresetId}
               backgroundStyleId={backgroundStyleId}
               onBackgroundStyleChange={setBackgroundStyleId}
               fontFamilyId={fontFamilyId}
@@ -138,6 +161,12 @@ export default function StudioPage() {
               onTitleScaleMultiplierChange={setTitleScaleMultiplier}
               subtitleScaleMultiplier={subtitleScaleMultiplier}
               onSubtitleScaleMultiplierChange={setSubtitleScaleMultiplier}
+              subtitleSpacingMultiplier={subtitleSpacingMultiplier}
+              onSubtitleSpacingMultiplierChange={setSubtitleSpacingMultiplier}
+              textOffsetX={textOffsetX}
+              onTextOffsetXChange={setTextOffsetX}
+              textOffsetY={textOffsetY}
+              onTextOffsetYChange={setTextOffsetY}
               screenshotScaleMultiplier={screenshotScaleMultiplier}
               onScreenshotScaleMultiplierChange={setScreenshotScaleMultiplier}
               screenshotOffsetX={screenshotOffsetX}
@@ -159,31 +188,7 @@ export default function StudioPage() {
                   template={selectedTemplate}
                   frameEnabled={frameEnabled}
                   controls={renderControls}
-                  zoom={previewZoom}
                 />
-              </div>
-              <div className="mt-3 flex items-center justify-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-full border border-transparent bg-transparent px-0 text-muted-foreground hover:bg-white/40 hover:text-foreground"
-                  onClick={() => setPreviewZoom((current) => Math.max(0.75, current - 0.1))}
-                  aria-label="Zoom out"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="min-w-14 text-center text-sm font-medium text-muted-foreground">
-                  {Math.round(previewZoom * 100)}%
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-full border border-transparent bg-transparent px-0 text-muted-foreground hover:bg-white/40 hover:text-foreground"
-                  onClick={() => setPreviewZoom((current) => Math.min(2, current + 0.1))}
-                  aria-label="Zoom in"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           </div>
@@ -197,12 +202,18 @@ export default function StudioPage() {
               onSubtitleChange={handleSubtitleChange}
               selectedTemplate={selectedTemplate}
               onTemplateChange={setSelectedTemplate}
+              customBackgroundColor={customBackgroundColor}
+              onCustomBackgroundColorChange={setCustomBackgroundColor}
+              customBackgroundOpacity={customBackgroundOpacity}
+              onCustomBackgroundOpacityChange={setCustomBackgroundOpacity}
+              customTextColor={customTextColor}
+              onCustomTextColorChange={setCustomTextColor}
+              layout={layout}
+              onLayoutChange={setLayout}
               frameEnabled={frameEnabled}
               onFrameToggle={setFrameEnabled}
               showDesignControls
               previewPreset={previewPreset}
-              presets={EXPORT_PRESETS}
-              onPreviewPresetChange={setPreviewPresetId}
               backgroundStyleId={backgroundStyleId}
               onBackgroundStyleChange={setBackgroundStyleId}
               fontFamilyId={fontFamilyId}
@@ -211,6 +222,12 @@ export default function StudioPage() {
               onTitleScaleMultiplierChange={setTitleScaleMultiplier}
               subtitleScaleMultiplier={subtitleScaleMultiplier}
               onSubtitleScaleMultiplierChange={setSubtitleScaleMultiplier}
+              subtitleSpacingMultiplier={subtitleSpacingMultiplier}
+              onSubtitleSpacingMultiplierChange={setSubtitleSpacingMultiplier}
+              textOffsetX={textOffsetX}
+              onTextOffsetXChange={setTextOffsetX}
+              textOffsetY={textOffsetY}
+              onTextOffsetYChange={setTextOffsetY}
               screenshotScaleMultiplier={screenshotScaleMultiplier}
               onScreenshotScaleMultiplierChange={setScreenshotScaleMultiplier}
               screenshotOffsetX={screenshotOffsetX}
@@ -220,33 +237,6 @@ export default function StudioPage() {
               showTextFields={false}
               panelless
             />
-            <div className="border-t border-border/80 pt-5">
-              <button
-                type="button"
-                onClick={() => setFrameEnabled(!frameEnabled)}
-                className={[
-                  "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors",
-                  frameEnabled
-                    ? "border-primary/30 bg-orange-50/80"
-                    : "border-border bg-white hover:border-primary/20",
-                ].join(" ")}
-              >
-                <span className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-muted-foreground">
-                    <Smartphone className="h-4 w-4" />
-                  </span>
-                  <span>
-                    <span className="block font-medium text-foreground">Mockup Frame</span>
-                    <span className="block text-sm text-muted-foreground">
-                      {frameEnabled ? "Enabled" : "Disabled"}
-                    </span>
-                  </span>
-                </span>
-                <span className="text-sm font-medium text-muted-foreground">
-                  {frameEnabled ? "On" : "Off"}
-                </span>
-              </button>
-            </div>
           </div>
         </aside>
       </div>

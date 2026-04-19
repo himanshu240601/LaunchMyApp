@@ -1,4 +1,5 @@
 export type PreviewTemplateId =
+  | "default"
   | "minimal-light"
   | "gradient-center"
   | "dark-premium";
@@ -10,6 +11,7 @@ export type BackgroundStyleId =
   | "dark-studio";
 
 export type FontFamilyId = "display" | "clean" | "rounded";
+export type LayoutId = "text-top-image-bottom" | "image-top-text-bottom";
 
 export type TemplateAlignment = "center";
 
@@ -96,7 +98,80 @@ export type FontFamilyOption = {
   stack: string;
 };
 
+export type LayoutOption = {
+  id: LayoutId;
+  label: string;
+};
+
+const IPHONE_FRAME: TemplateFrameConfig = {
+  assetPath: "/frames/iphone-dark-premium.png",
+  bounds: {
+    top: 0.24,
+    width: 0.72,
+    height: 0.61,
+    align: "center",
+  },
+  screenSlot: {
+    x: 0.02,
+    y: 0.012,
+    width: 0.96,
+    height: 0.972,
+    borderRadius: 0.14,
+  },
+};
+
+export const LAYOUT_OPTIONS: LayoutOption[] = [
+  { id: "text-top-image-bottom", label: "Text Top" },
+  { id: "image-top-text-bottom", label: "Image Top" },
+];
+
 export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
+  {
+    id: "default",
+    label: "Default",
+    background: {
+      kind: "soft-orbs",
+      base: "#ffffff",
+      accentA: "rgba(255, 255, 255, 0)",
+      accentB: "rgba(255, 255, 255, 0)",
+    },
+    title: {
+      color: "#20130d",
+      maxWidth: 0.72,
+      top: 0.11,
+      fontScale: 0.07,
+      lineHeight: 0.08,
+      maxLines: 2,
+      align: "center",
+    },
+    subtitle: {
+      color: "#6d564a",
+      maxWidth: 0.62,
+      top: 0.205,
+      fontScale: 0.03,
+      lineHeight: 0.04,
+      maxLines: 2,
+      align: "center",
+    },
+    screenshotSlot: {
+      top: 0.3,
+      width: 0.83,
+      height: 0.56,
+      radius: 0.04,
+      padding: 0.045,
+      background: "transparent",
+      border: "rgba(0, 0, 0, 0)",
+      align: "center",
+    },
+    spacing: {
+      paddingX: 0.085,
+      footerY: 0.92,
+    },
+    frame: IPHONE_FRAME,
+    cardColor: "transparent",
+    cardBorder: "rgba(0, 0, 0, 0)",
+    footerColor: "rgba(0, 0, 0, 0)",
+  },
   {
     id: "minimal-light",
     label: "Minimal",
@@ -138,6 +213,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
       paddingX: 0.085,
       footerY: 0.92,
     },
+    frame: IPHONE_FRAME,
     cardColor: "#ffffff",
     cardBorder: "rgba(117, 57, 28, 0.08)",
     footerColor: "#cfb39b",
@@ -183,6 +259,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
       paddingX: 0.085,
       footerY: 0.92,
     },
+    frame: IPHONE_FRAME,
     cardColor: "#fffaf7",
     cardBorder: "rgba(188, 104, 49, 0.12)",
     footerColor: "#d2ab90",
@@ -224,22 +301,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
       border: "rgba(255, 255, 255, 0.08)",
       align: "center",
     },
-    frame: {
-      assetPath: "/frames/iphone-dark-premium.png",
-      bounds: {
-        top: 0.285,
-        width: 0.72,
-        height: 0.61,
-        align: "center",
-      },
-      screenSlot: {
-        x: 0.065,
-        y: 0.03,
-        width: 0.87,
-        height: 0.94,
-        borderRadius: 0.09,
-      },
-    },
+    frame: IPHONE_FRAME,
     spacing: {
       paddingX: 0.085,
       footerY: 0.92,
@@ -250,7 +312,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
   },
 ];
 
-export const DEFAULT_PREVIEW_TEMPLATE_ID: PreviewTemplateId = "minimal-light";
+export const DEFAULT_PREVIEW_TEMPLATE_ID: PreviewTemplateId = "default";
 
 export const BACKGROUND_STYLE_OPTIONS: BackgroundStyleOption[] = [
   {

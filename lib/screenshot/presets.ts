@@ -17,7 +17,6 @@ export type Slide = {
 export const EXPORT_PRESETS: ExportPreset[] = [
   { id: "iphone-67", label: 'iPhone 6.7"', width: 1290, height: 2796 },
   { id: "iphone-65", label: 'iPhone 6.5"', width: 1242, height: 2688 },
-  { id: "ipad-129", label: 'iPad 12.9"', width: 2048, height: 2732 },
 ];
 
 export const AUTO_TITLES = [

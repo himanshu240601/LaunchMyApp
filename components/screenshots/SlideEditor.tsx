@@ -1,14 +1,21 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
+import { Smartphone } from "lucide-react";
+
 import {
   type Slide,
 } from "@/lib/screenshot/presets";
 import {
   BACKGROUND_STYLE_OPTIONS,
   FONT_FAMILY_OPTIONS,
+  getScreenshotTemplate,
+  LAYOUT_OPTIONS,
   SCREENSHOT_TEMPLATES,
   type BackgroundStyleId,
   type FontFamilyId,
+  type LayoutId,
   type PreviewTemplateId,
 } from "@/lib/screenshot/templates";
 import type { ExportPreset } from "@/lib/screenshot/presets";
@@ -19,12 +26,18 @@ type SlideEditorProps = {
   onSubtitleChange: (subtitle: string) => void;
   selectedTemplate: PreviewTemplateId;
   onTemplateChange: (template: PreviewTemplateId) => void;
+  customBackgroundColor: string;
+  onCustomBackgroundColorChange: (value: string) => void;
+  customBackgroundOpacity: number;
+  onCustomBackgroundOpacityChange: (value: number) => void;
+  customTextColor: string;
+  onCustomTextColorChange: (value: string) => void;
+  layout: LayoutId;
+  onLayoutChange: (value: LayoutId) => void;
   frameEnabled: boolean;
   onFrameToggle: (enabled: boolean) => void;
   showDesignControls?: boolean;
   previewPreset: ExportPreset;
-  presets: ExportPreset[];
-  onPreviewPresetChange: (presetId: string) => void;
   backgroundStyleId: BackgroundStyleId;
   onBackgroundStyleChange: (backgroundStyleId: BackgroundStyleId) => void;
   fontFamilyId: FontFamilyId;
@@ -33,6 +46,12 @@ type SlideEditorProps = {
   onTitleScaleMultiplierChange: (value: number) => void;
   subtitleScaleMultiplier: number;
   onSubtitleScaleMultiplierChange: (value: number) => void;
+  subtitleSpacingMultiplier: number;
+  onSubtitleSpacingMultiplierChange: (value: number) => void;
+  textOffsetX: number;
+  onTextOffsetXChange: (value: number) => void;
+  textOffsetY: number;
+  onTextOffsetYChange: (value: number) => void;
   screenshotScaleMultiplier: number;
   onScreenshotScaleMultiplierChange: (value: number) => void;
   screenshotOffsetX: number;
@@ -50,10 +69,18 @@ export function SlideEditor({
   onSubtitleChange,
   selectedTemplate,
   onTemplateChange,
+  customBackgroundColor,
+  onCustomBackgroundColorChange,
+  customBackgroundOpacity,
+  onCustomBackgroundOpacityChange,
+  customTextColor,
+  onCustomTextColorChange,
+  layout,
+  onLayoutChange,
+  frameEnabled,
+  onFrameToggle,
   showDesignControls = false,
   previewPreset,
-  presets,
-  onPreviewPresetChange,
   backgroundStyleId,
   onBackgroundStyleChange,
   fontFamilyId,
@@ -62,6 +89,12 @@ export function SlideEditor({
   onTitleScaleMultiplierChange,
   subtitleScaleMultiplier,
   onSubtitleScaleMultiplierChange,
+  subtitleSpacingMultiplier,
+  onSubtitleSpacingMultiplierChange,
+  textOffsetX,
+  onTextOffsetXChange,
+  textOffsetY,
+  onTextOffsetYChange,
   screenshotScaleMultiplier,
   onScreenshotScaleMultiplierChange,
   screenshotOffsetX,
@@ -72,8 +105,109 @@ export function SlideEditor({
   panelless = false,
   hideHeader = false,
 }: SlideEditorProps) {
+  const [activeDesignTab, setActiveDesignTab] = useState<"settings" | "templates">("settings");
+  const normalizedColorValue = /^#([0-9a-fA-F]{6})$/.test(customBackgroundColor)
+    ? customBackgroundColor
+    : "#ffffff";
+  const normalizedTextColorValue = /^#([0-9a-fA-F]{6})$/.test(customTextColor)
+    ? customTextColor
+    : "#20130d";
+
+  const activeTemplate = getScreenshotTemplate(selectedTemplate);
+  const baseTitleSizePx = previewPreset.width * activeTemplate.title.fontScale;
+  const baseSubtitleSizePx = previewPreset.width * activeTemplate.subtitle.fontScale;
+  const titleSizePx = Math.round(
+    baseTitleSizePx * titleScaleMultiplier,
+  );
+  const subtitleSizePx = Math.round(
+    baseSubtitleSizePx * subtitleScaleMultiplier,
+  );
+  const titleSizeOptions = Array.from(
+    new Set([56, 64, 72, 80, 88, 96, 104, 112, 120, 128, titleSizePx]),
+  ).sort((a, b) => a - b);
+  const subtitleSizeOptions = Array.from(
+    new Set([24, 28, 32, 36, 40, 44, 48, 52, 56, subtitleSizePx]),
+  ).sort((a, b) => a - b);
+
+  const renderColorField = ({
+    colorValue,
+    opacity,
+    onColorChange,
+    onOpacityChange,
+    inputId,
+    fallbackColor,
+    showOpacity = false,
+  }: {
+    colorValue: string;
+    opacity: number;
+    onColorChange: (value: string) => void;
+    onOpacityChange?: (value: number) => void;
+    inputId: string;
+    fallbackColor: string;
+    showOpacity?: boolean;
+  }) => (
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-white px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+      <label
+        className="relative block h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-border/80 ring-1 ring-black/5"
+        style={{
+          backgroundImage:
+            "linear-gradient(45deg, rgba(207,197,187,0.35) 25%, transparent 25%, transparent 75%, rgba(207,197,187,0.35) 75%, rgba(207,197,187,0.35)), linear-gradient(45deg, rgba(207,197,187,0.35) 25%, transparent 25%, transparent 75%, rgba(207,197,187,0.35) 75%, rgba(207,197,187,0.35))",
+          backgroundPosition: "0 0, 6px 6px",
+          backgroundSize: "12px 12px",
+          backgroundColor: "rgba(255, 255, 255, 0.92)",
+        }}
+      >
+        <span
+          className="absolute inset-0"
+          style={{
+            backgroundColor: colorValue,
+            opacity,
+          }}
+        />
+        <span className="absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-black/10 to-transparent" />
+        <input
+          type="color"
+          value={colorValue}
+          onChange={(event) => onColorChange(event.target.value)}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          aria-label="Pick color"
+        />
+      </label>
+      <input
+        id={inputId}
+        type="text"
+        value={colorValue}
+        onChange={(event) => onColorChange(event.target.value)}
+        className="min-w-0 flex-1 bg-transparent text-sm font-medium uppercase tracking-[0.08em] text-foreground outline-none placeholder:text-muted-foreground"
+        placeholder={fallbackColor}
+        spellCheck={false}
+        aria-label="Color hex"
+      />
+      {showOpacity ? (
+        <>
+          <div className="h-6 w-px shrink-0 bg-border" />
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={Math.round(opacity * 100)}
+            onChange={(event) =>
+              onOpacityChange?.(
+                Math.min(100, Math.max(0, Number(event.target.value) || 0)) / 100,
+              )
+            }
+            className="w-16 shrink-0 bg-transparent text-right text-sm font-medium text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            aria-label="Color opacity"
+          />
+          <span className="shrink-0 text-sm text-muted-foreground">%</span>
+        </>
+      ) : null}
+    </div>
+  );
+
   return (
-    <div className={panelless ? "h-full" : "h-full rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft"}>
+    <div className={panelless ? "flex h-full min-h-0 flex-col" : "flex h-full min-h-0 flex-col rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft"}>
       {!hideHeader ? (
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -129,190 +263,337 @@ export function SlideEditor({
 
           {showDesignControls ? (
             <>
-              <div className="space-y-2.5">
-                <p className="text-sm font-medium text-foreground">Preview Device</p>
-                <div className="grid gap-2">
-                  {presets.map((preset) => (
+              <div className="rounded-[1.35rem] border border-border/80 bg-background/80 p-1">
+                <div className="grid grid-cols-2 gap-1">
+                  {[
+                    { id: "settings", label: "Settings" },
+                    { id: "templates", label: "Templates" },
+                  ].map((tab) => (
                     <button
-                      key={preset.id}
+                      key={tab.id}
                       type="button"
-                      onClick={() => onPreviewPresetChange(preset.id)}
+                      onClick={() => setActiveDesignTab(tab.id as "settings" | "templates")}
                       className={[
-                        "flex w-full items-center justify-between rounded-2xl border px-4 py-2.5 text-left transition-colors",
-                        previewPreset.id === preset.id
+                        "rounded-[1rem] px-3 py-2 text-sm font-medium transition-colors",
+                        activeDesignTab === tab.id
+                          ? "bg-white text-foreground shadow-[0_8px_20px_rgba(66,36,23,0.08)]"
+                          : "text-muted-foreground hover:text-foreground",
+                      ].join(" ")}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {activeDesignTab === "settings" ? (
+                <>
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-foreground">Mockup Frame</p>
+                    <button
+                      type="button"
+                      onClick={() => onFrameToggle(!frameEnabled)}
+                      className={[
+                        "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors",
+                        frameEnabled
                           ? "border-primary/30 bg-orange-50/80"
                           : "border-border bg-white hover:border-primary/20",
                       ].join(" ")}
                     >
-                      <span className="font-medium text-foreground">{preset.label}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {preset.width} x {preset.height}
+                      <span className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-muted-foreground">
+                          <Smartphone className="h-4 w-4" />
+                        </span>
+                        <span>
+                          <span className="block font-medium text-foreground">Mockup Frame</span>
+                          <span className="block text-sm text-muted-foreground">
+                            {frameEnabled ? "Enabled" : "Disabled"}
+                          </span>
+                        </span>
+                      </span>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {frameEnabled ? "On" : "Off"}
                       </span>
                     </button>
-                  ))}
-                </div>
-                <div className="grid gap-3 pt-1 sm:grid-cols-3">
-                  <label className="space-y-1.5">
-                    <span className="text-sm font-medium text-foreground">Scale</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      value={screenshotScaleMultiplier}
-                      onChange={(event) =>
-                        onScreenshotScaleMultiplierChange(
-                          Math.min(2, Math.max(0, Number(event.target.value) || 0)),
-                        )
-                      }
-                      className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
-                    />
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-sm font-medium text-foreground">Position X</span>
-                    <input
-                      type="number"
-                      value={screenshotOffsetX}
-                      onChange={(event) =>
-                        onScreenshotOffsetXChange(Number(event.target.value) || 0)
-                      }
-                      className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-sm font-medium text-foreground">Position Y</span>
-                    <input
-                      type="number"
-                      value={screenshotOffsetY}
-                      onChange={(event) =>
-                        onScreenshotOffsetYChange(Number(event.target.value) || 0)
-                      }
-                      className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-2.5">
-                <p className="text-sm font-medium text-foreground">Template</p>
-                <div className="grid gap-2">
-                  {SCREENSHOT_TEMPLATES.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      onClick={() => onTemplateChange(template.id)}
-                      className={[
-                        "flex w-full items-center justify-between rounded-2xl border px-4 py-2.5 text-left transition-colors",
-                        selectedTemplate === template.id
-                          ? "border-primary/30 bg-orange-50/80"
-                          : "border-border bg-white hover:border-primary/20",
-                      ].join(" ")}
-                    >
-                      <span className="font-medium text-foreground">{template.label}</span>
-                      <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                        Style
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2.5">
-                <p className="text-sm font-medium text-foreground">Background</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {BACKGROUND_STYLE_OPTIONS.map((backgroundOption) => (
-                    <button
-                      key={backgroundOption.id}
-                      type="button"
-                      onClick={() => onBackgroundStyleChange(backgroundOption.id)}
-                      className={[
-                        "rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition-colors",
-                        backgroundStyleId === backgroundOption.id
-                          ? "border-primary/30 bg-orange-50/80 text-foreground"
-                          : "border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-foreground",
-                      ].join(" ")}
-                    >
-                      {backgroundOption.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2.5">
-                <p className="text-sm font-medium text-foreground">Font</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {FONT_FAMILY_OPTIONS.map((fontOption) => (
-                    <button
-                      key={fontOption.id}
-                      type="button"
-                      onClick={() => onFontFamilyChange(fontOption.id)}
-                      className={[
-                        "rounded-2xl border px-3 py-2.5 text-center text-sm font-medium transition-colors",
-                        fontFamilyId === fontOption.id
-                          ? "border-primary/30 bg-orange-50/80 text-foreground"
-                          : "border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-foreground",
-                      ].join(" ")}
-                    >
-                      {fontOption.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3 rounded-[1.5rem] border border-border bg-background/80 p-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-sm font-medium text-foreground" htmlFor="title-size">
-                      Title Size
-                    </label>
-                    <span className="text-sm text-muted-foreground">
-                      {Math.round(titleScaleMultiplier * 100)}%
-                    </span>
                   </div>
-                  <input
-                    id="title-size"
-                    type="range"
-                    min="0.9"
-                    max="1.6"
-                    step="0.05"
-                    value={titleScaleMultiplier}
-                    onChange={(event) =>
-                      onTitleScaleMultiplierChange(Number(event.target.value))
-                    }
-                    className="w-full accent-[hsl(var(--primary))]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-sm font-medium text-foreground" htmlFor="subtitle-size">
-                      Subtitle Size
-                    </label>
-                    <span className="text-sm text-muted-foreground">
-                      {Math.round(subtitleScaleMultiplier * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    id="subtitle-size"
-                    type="range"
-                    min="0.9"
-                    max="1.5"
-                    step="0.05"
-                    value={subtitleScaleMultiplier}
-                    onChange={(event) =>
-                      onSubtitleScaleMultiplierChange(Number(event.target.value))
-                    }
-                    className="w-full accent-[hsl(var(--primary))]"
-                  />
-                </div>
-              </div>
 
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-foreground">Layout</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {LAYOUT_OPTIONS.map((layoutOption) => (
+                        <button
+                          key={layoutOption.id}
+                          type="button"
+                          onClick={() => onLayoutChange(layoutOption.id)}
+                          className={[
+                            "rounded-2xl border px-4 py-2.5 text-center text-sm font-medium transition-colors",
+                            layout === layoutOption.id
+                              ? "border-primary/30 bg-orange-50/80 text-foreground"
+                              : "border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-foreground",
+                          ].join(" ")}
+                        >
+                          {layoutOption.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <label className="space-y-1.5">
+                        <span className="text-sm font-medium text-foreground">Scale</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="2"
+                          step="0.1"
+                          value={screenshotScaleMultiplier}
+                          onChange={(event) =>
+                            onScreenshotScaleMultiplierChange(
+                              Math.min(2, Math.max(0, Number(event.target.value) || 0)),
+                            )
+                          }
+                          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                        />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-sm font-medium text-foreground">Position X</span>
+                        <input
+                          type="number"
+                          value={screenshotOffsetX}
+                          onChange={(event) =>
+                            onScreenshotOffsetXChange(Number(event.target.value) || 0)
+                          }
+                          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-sm font-medium text-foreground">Position Y</span>
+                        <input
+                          type="number"
+                          value={screenshotOffsetY}
+                          onChange={(event) =>
+                            onScreenshotOffsetYChange(Number(event.target.value) || 0)
+                          }
+                          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-foreground">Background</p>
+                    {selectedTemplate === "default" ? (
+                      <div>
+                        {renderColorField({
+                          colorValue: normalizedColorValue,
+                          opacity: customBackgroundOpacity,
+                          onColorChange: onCustomBackgroundColorChange,
+                          onOpacityChange: onCustomBackgroundOpacityChange,
+                          inputId: "custom-background-hex",
+                          fallbackColor: "#FFFFFF",
+                          showOpacity: true,
+                        })}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        {BACKGROUND_STYLE_OPTIONS.map((backgroundOption) => (
+                          <button
+                            key={backgroundOption.id}
+                            type="button"
+                            onClick={() => onBackgroundStyleChange(backgroundOption.id)}
+                            className={[
+                              "rounded-2xl border px-4 py-2.5 text-left text-sm font-medium transition-colors",
+                              backgroundStyleId === backgroundOption.id
+                                ? "border-primary/30 bg-orange-50/80 text-foreground"
+                                : "border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-foreground",
+                            ].join(" ")}
+                          >
+                            {backgroundOption.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-foreground">Font</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {FONT_FAMILY_OPTIONS.map((fontOption) => (
+                        <button
+                          key={fontOption.id}
+                          type="button"
+                          onClick={() => onFontFamilyChange(fontOption.id)}
+                          className={[
+                            "rounded-2xl border px-3 py-2.5 text-center text-sm font-medium transition-colors",
+                            fontFamilyId === fontOption.id
+                              ? "border-primary/30 bg-orange-50/80 text-foreground"
+                              : "border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-foreground",
+                          ].join(" ")}
+                        >
+                          {fontOption.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 rounded-[1.5rem] border border-border bg-background/80 p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="text-sm font-medium text-foreground" htmlFor="title-size">
+                          Title Size
+                        </label>
+                        <span className="text-sm text-muted-foreground">
+                          {titleSizePx}px
+                        </span>
+                      </div>
+                      <select
+                        id="title-size"
+                        value={titleSizePx}
+                        onChange={(event) =>
+                          onTitleScaleMultiplierChange(Number(event.target.value) / baseTitleSizePx)
+                        }
+                        className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                      >
+                        {titleSizeOptions.map((size) => (
+                          <option key={size} value={size}>
+                            {size}px
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="text-sm font-medium text-foreground" htmlFor="subtitle-size">
+                          Subtitle Size
+                        </label>
+                        <span className="text-sm text-muted-foreground">
+                          {subtitleSizePx}px
+                        </span>
+                      </div>
+                      <select
+                        id="subtitle-size"
+                        value={subtitleSizePx}
+                        onChange={(event) =>
+                          onSubtitleScaleMultiplierChange(
+                            Number(event.target.value) / baseSubtitleSizePx,
+                          )
+                        }
+                        className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                      >
+                        {subtitleSizeOptions.map((size) => (
+                          <option key={size} value={size}>
+                            {size}px
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="text-sm font-medium text-foreground" htmlFor="subtitle-spacing">
+                          Title/Subtitle Spacing
+                        </label>
+                        <span className="text-sm text-muted-foreground">
+                          {subtitleSpacingMultiplier.toFixed(2)}x
+                        </span>
+                      </div>
+                      <input
+                        id="subtitle-spacing"
+                        type="range"
+                        min="0.6"
+                        max="1.8"
+                        step="0.05"
+                        value={subtitleSpacingMultiplier}
+                        onChange={(event) =>
+                          onSubtitleSpacingMultiplierChange(Number(event.target.value))
+                        }
+                        className="w-full accent-primary"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1.5">
+                          <span className="text-sm font-medium text-foreground">Position X</span>
+                          <input
+                            type="number"
+                            value={textOffsetX}
+                            onChange={(event) => onTextOffsetXChange(Number(event.target.value) || 0)}
+                            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </label>
+                        <label className="space-y-1.5">
+                          <span className="text-sm font-medium text-foreground">Position Y</span>
+                          <input
+                            type="number"
+                            value={textOffsetY}
+                            onChange={(event) => onTextOffsetYChange(Number(event.target.value) || 0)}
+                            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-foreground">Text Color</p>
+                    {renderColorField({
+                      colorValue: normalizedTextColorValue,
+                      opacity: 1,
+                      onColorChange: onCustomTextColorChange,
+                      inputId: "custom-text-hex",
+                      fallbackColor: "#20130D",
+                    })}
+                  </div>
+
+                </>
+              ) : (
+                <div className="space-y-2.5">
+                  <p className="text-sm font-medium text-foreground">Templates</p>
+                  <div className="grid gap-2">
+                    {SCREENSHOT_TEMPLATES.map((template) => (
+                      (() => {
+                        const isDefaultTemplate = template.id === "default";
+                        return (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => onTemplateChange(template.id)}
+                        disabled={!isDefaultTemplate}
+                        className={[
+                          "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors",
+                          selectedTemplate === template.id
+                            ? "border-primary/30 bg-orange-50/80"
+                            : "border-border bg-white hover:border-primary/20",
+                          !isDefaultTemplate ? "cursor-not-allowed opacity-45" : "",
+                        ].join(" ")}
+                      >
+                        <span className="font-medium text-foreground">{template.label}</span>
+                      </button>
+                        );
+                      })()
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           ) : null}
         </div>
       ) : (
-        <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          Upload images to start editing screen text.
-        </p>
+        <div className="mt-4 flex min-h-0 flex-1 flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-border bg-slate-50 px-6 py-8 text-center">
+          <div className="relative w-full max-w-[11.5rem]">
+            <Image
+              src="/placeholder-upload.png"
+              alt="Create screenshot placeholder"
+              width={768}
+              height={768}
+              className="mx-auto h-auto w-full object-contain"
+              priority
+            />
+          </div>
+          <p className="mt-1.5 max-w-xs text-sm leading-6 text-muted-foreground">
+            Upload screenshots from the Screens card to start adding title and subtitle content here.
+          </p>
+        </div>
       )}
     </div>
   );
