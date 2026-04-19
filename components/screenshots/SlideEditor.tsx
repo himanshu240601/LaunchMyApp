@@ -359,7 +359,7 @@ export function SlideEditor({
                         <p className="text-xs leading-5 text-muted-foreground">
                           {applyPreviewToAll
                             ? "Turn off to edit single screens."
-                            : "Turn on to apply the same style across screens."}
+                            : "Turn on to apply same style across screens."}
                         </p>
                       </div>
                       <button
