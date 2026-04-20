@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ExportReviewDialog } from "@/components/screenshots/export-review-dialog";
 import { sanitizeExportName } from "@/app/create/create-flow-context";
 import { PreviewCanvas } from "@/components/screenshots/PreviewCanvas";
 import { ScreenshotList } from "@/components/screenshots/ScreenshotList";
@@ -15,6 +16,7 @@ import { savePreviewSnapshot } from "@/lib/screenshot/preview-snapshot";
 
 export default function StudioPage() {
   const router = useRouter();
+  const [showExportReviewDialog, setShowExportReviewDialog] = useState(false);
   const {
     slides,
     activeSlide,
@@ -146,8 +148,22 @@ export default function StudioPage() {
     });
   };
 
+  const handleExportClick = async () => {
+    const exported = await handleExport();
+    if (exported) {
+      setShowExportReviewDialog(true);
+    }
+  };
+
   return (
     <section className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
+      {showExportReviewDialog ? (
+        <ExportReviewDialog
+          open={showExportReviewDialog}
+          onClose={() => setShowExportReviewDialog(false)}
+          exportName={sanitizeExportName(exportName)}
+        />
+      ) : null}
       <div className="relative flex shrink-0 items-center justify-between gap-4 rounded-[1.25rem] border border-white/70 bg-white/85 px-4 py-3">
         <div className="relative z-10 flex items-center gap-3">
           <Link
@@ -190,7 +206,7 @@ export default function StudioPage() {
             type="button"
             className="gap-2 rounded-full"
             onClick={() => {
-              void handleExport();
+              void handleExportClick();
             }}
             disabled={isExporting || Boolean(exportNameError)}
           >

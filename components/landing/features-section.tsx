@@ -9,8 +9,8 @@ export function FeaturesSection() {
       <div className="container">
         <SectionHeading
           eyebrow="Features"
-          title="Everything you need to turn raw product captures into App Store screenshots."
-          description="Focused on one job: polished screenshot sets without the design overhead."
+          title="Everything you need to create iPhone App Store screenshots."
+          description="Built as a focused App Store screenshot creator, so you can go from raw screens to polished listing assets in one flow."
         />
         <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {featureItems.map((feature, index) => {

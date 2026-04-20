@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Check, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ThemedDialog } from "@/components/ui/themed-dialog";
 import {
   EXPORT_PRESETS,
   type Slide,
@@ -237,38 +238,31 @@ export function SlideEditor({
 
   return (
     <div className={panelless ? "flex h-full min-h-0 flex-col" : "flex h-full min-h-0 flex-col rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft"}>
-      {showApplyAllDialog ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(26,14,9,0.42)] px-4 backdrop-blur-[2px]">
-          <div className="w-full max-w-md rounded-[1.75rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,245,239,0.98))] p-5 shadow-[0_30px_80px_rgba(65,33,20,0.2)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <ThemedDialog
+        open={showApplyAllDialog}
+        onClose={() => setShowApplyAllDialog(false)}
+        title="Match all screens to this design?"
+        description="Turning this on will update every screenshot design to match the selected screen."
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="rounded-full border border-border bg-white text-foreground shadow-none ring-0 hover:bg-white"
+              onClick={() => setShowApplyAllDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="rounded-full"
+              onClick={handleConfirmApplyAll}
+            >
               Apply To All
-            </p>
-            <h4 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-              Match all screens to this design?
-            </h4>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Turning this on will update every screenshot design to match the currently selected screen.
-            </p>
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                className="rounded-full border border-border bg-white text-foreground shadow-none ring-0 hover:bg-white"
-                onClick={() => setShowApplyAllDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                className="rounded-full"
-                onClick={handleConfirmApplyAll}
-              >
-                Apply To All
-              </Button>
-            </div>
+            </Button>
           </div>
-        </div>
-      ) : null}
+        )}
+      />
       {!hideHeader ? (
         <div className="flex items-start justify-between gap-4">
           <div>

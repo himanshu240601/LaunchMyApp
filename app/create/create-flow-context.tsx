@@ -121,7 +121,7 @@ type CreateFlowContextValue = {
   togglePreviewTargetSlideId: (slideId: string) => void;
   setFrameEnabled: (enabled: boolean) => void;
   removeSlide: (slideId: string) => void;
-  handleExport: () => Promise<void>;
+  handleExport: () => Promise<boolean>;
 };
 
 const CreateFlowContext = createContext<CreateFlowContextValue | null>(null);
@@ -458,7 +458,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       EXPORT_QUALITY_OPTIONS.find((option) => option.id === exportQuality)?.scale ?? 1;
 
     if (!exportableSlides.length || !selectedPresets.length) {
-      return;
+      return false;
     }
 
     setIsExporting(true);
@@ -483,6 +483,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       }
 
       await downloadZip(files, `${sanitizeExportName(exportName)}.zip`);
+      return true;
     } finally {
       setIsExporting(false);
     }

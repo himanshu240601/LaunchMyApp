@@ -15,8 +15,8 @@ export function HowItWorksSection() {
           <div className="absolute right-12 top-12 h-44 w-44 rounded-full bg-orange-200/20 blur-3xl" />
           <SectionHeading
             eyebrow="How it works"
-            title="From raw screens to polished screens in three steps."
-            description="A cleaner, faster workflow for shipping App Store screenshots."
+            title="From iPhone screenshots to App Store-ready creatives in three steps."
+            description="A simple workflow for turning product screens into a polished listing set."
           />
           <div className="relative mt-14">
             <div className="absolute left-1/2 top-9 hidden h-[2px] w-[72%] -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/15 to-transparent lg:block" />
@@ -36,15 +36,21 @@ export function HowItWorksSection() {
                     <h3 className="mt-6 min-h-[4rem] text-2xl font-semibold tracking-tight text-foreground">
                       {index === 0 ? (
                         <>
-                          Upload your app
+                          Upload your iPhone
                           <br />
                           screenshots
                         </>
+                      ) : index === 1 ? (
+                        <>
+                          Write the message
+                          <br />
+                          and style it
+                        </>
                       ) : index === 2 ? (
                         <>
-                          Export your App Store
+                          Preview and export
                           <br />
-                          set
+                          your set
                         </>
                       ) : (
                         step.title

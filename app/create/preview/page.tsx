@@ -6,6 +6,7 @@ import { Download, RefreshCw } from "lucide-react";
 
 import { sanitizeExportName } from "@/app/create/create-flow-context";
 import { Button } from "@/components/ui/button";
+import { ExportReviewDialog } from "@/components/screenshots/export-review-dialog";
 import { PreviewCanvas } from "@/components/screenshots/PreviewCanvas";
 import { generateSlideBlob } from "@/lib/screenshot/generate";
 import {
@@ -41,6 +42,7 @@ function getSlideFrameEnabled(snapshot: PreviewSnapshot, slideId: string) {
 export default function PreviewPage() {
   const [snapshot, setSnapshot] = useState<PreviewSnapshot | null>(() => loadPreviewSnapshot());
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportReviewDialog, setShowExportReviewDialog] = useState(false);
   const syncSnapshot = useCallback(() => {
     setSnapshot(loadPreviewSnapshot());
   }, []);
@@ -117,6 +119,7 @@ export default function PreviewPage() {
       }
 
       await downloadZip(files, `${sanitizeExportName(snapshot.exportName)}.zip`);
+      setShowExportReviewDialog(true);
     } finally {
       setIsExporting(false);
     }
@@ -143,6 +146,13 @@ export default function PreviewPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,167,111,0.12),transparent_28%),linear-gradient(180deg,#fffdf9,#f6efe5)] text-foreground">
+      {showExportReviewDialog ? (
+        <ExportReviewDialog
+          open={showExportReviewDialog}
+          onClose={() => setShowExportReviewDialog(false)}
+          exportName={sanitizeExportName(snapshot.exportName)}
+        />
+      ) : null}
       <div className="mx-auto max-w-none px-2 py-2 sm:px-3 lg:px-3">
         <header className="relative flex shrink-0 items-center justify-between gap-4 rounded-[1.25rem] border border-white/70 bg-white/85 px-4 py-3">
           <div className="relative z-10 flex items-center gap-3">

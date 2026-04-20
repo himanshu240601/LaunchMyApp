@@ -23,7 +23,7 @@ import type {
 export const navItems: NavItem[] = [
   { label: "Features", href: "#features" },
   { label: "How it works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
+  // { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -67,47 +67,47 @@ export const problemItems: ProblemItem[] = [
 
 export const featureItems: FeatureItem[] = [
   {
-    title: "Generate polished App Store screens",
-    description: "Turn raw captures into branded App Store screens in one flow.",
+    title: "Made for iPhone App Store screenshots",
+    description: "Create polished App Store-ready iPhone screenshots without jumping into a full design tool.",
     icon: ImagePlus,
   },
   {
-    title: "Built-in screenshot copy layouts",
-    description: "Add headlines and supporting copy that fit the layout automatically.",
+    title: "Add title and subtitle copy fast",
+    description: "Write clear headline and subtitle messaging for every screen in a layout built for mobile listings.",
     icon: Sparkles,
   },
   {
-    title: "Reusable styles for every release",
-    description: "Reuse styles across launches, updates, and ASO tests.",
+    title: "Keep every screenshot consistent",
+    description: "Apply the same visual style across your set so your listing feels clean, intentional, and on-brand.",
     icon: Layers3,
   },
   {
-    title: "Templates built for mobile apps",
-    description: "Start from templates tuned for common mobile app flows.",
+    title: "Preview like an App Store listing",
+    description: "Review your screenshot sequence in a storefront-style preview before you export.",
     icon: Rocket,
   },
   {
-    title: "Clean exports without cleanup",
-    description: "Export screenshot sets without bouncing through design tools.",
+    title: "Export in the right iPhone sizes",
+    description: "Download screenshot sets prepared for the iPhone frame sizes you want to ship.",
     icon: BrushCleaning,
   },
 ];
 
 export const steps: StepItem[] = [
   {
-    title: "Upload your app screenshots",
+    title: "Upload your iPhone screenshots",
     description:
-      "Bring in raw simulator or device screenshots from your product as-is. No prep work required.",
+      "Bring in up to four raw iPhone screenshots from your app. Start with the real product screens you want to show on the App Store.",
   },
   {
-    title: "Apply a screenshot style and message",
+    title: "Write your message and style it",
     description:
-      "Choose a polished direction with brand colors, backgrounds, captions that match your app.",
+      "Add titles, subtitles, layout, colors, and frame settings so each screenshot explains the value of your app clearly.",
   },
   {
-    title: "Export your App Store set",
+    title: "Preview and export your listing set",
     description:
-      "Download a consistent screenshot set sized and ready for your App Store listing or release update.",
+      "Check how the sequence will look in an App Store-style preview, then export a finished set ready for your listing.",
   },
 ];
 

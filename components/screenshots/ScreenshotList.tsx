@@ -4,6 +4,8 @@ import { ChangeEvent, useId, useState } from "react";
 import Image from "next/image";
 import { UploadCloud, X } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { ThemedDialog } from "@/components/ui/themed-dialog";
 import type { Slide } from "@/lib/screenshot/presets";
 
 type ScreenshotListProps = {
@@ -25,6 +27,7 @@ export function ScreenshotList({
 }: ScreenshotListProps) {
   const inputId = useId();
   const [error, setError] = useState<string | null>(null);
+  const [slidePendingRemoval, setSlidePendingRemoval] = useState<Slide | null>(null);
   const remainingSlots = Math.max(0, MAX_FILES_TOTAL - slides.length);
   const canUploadMore = Boolean(onFilesSelected) && remainingSlots > 0;
 
@@ -64,6 +67,40 @@ export function ScreenshotList({
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft">
+      <ThemedDialog
+        open={Boolean(slidePendingRemoval)}
+        onClose={() => setSlidePendingRemoval(null)}
+        title="Remove this screenshot?"
+        description={
+          slidePendingRemoval
+            ? `This will remove ${slidePendingRemoval.title || "the current screen"} from your set. You can always upload it again later.`
+            : undefined
+        }
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="rounded-full border border-border bg-white text-foreground shadow-none ring-0 hover:bg-white"
+              onClick={() => setSlidePendingRemoval(null)}
+            >
+              Keep it
+            </Button>
+            <Button
+              type="button"
+              className="rounded-full"
+              onClick={() => {
+                if (slidePendingRemoval && onRemoveSlide) {
+                  onRemoveSlide(slidePendingRemoval.id);
+                }
+                setSlidePendingRemoval(null);
+              }}
+            >
+              Remove
+            </Button>
+          </div>
+        )}
+      />
       <div className="mb-5 shrink-0">
         <div className="flex items-center justify-between gap-3 pr-1">
           <div>
@@ -102,7 +139,7 @@ export function ScreenshotList({
               {onRemoveSlide ? (
                 <button
                   type="button"
-                  onClick={() => onRemoveSlide(slide.id)}
+                  onClick={() => setSlidePendingRemoval(slide)}
                   className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/80 bg-[rgba(29,16,10,0.78)] text-white shadow-[0_10px_20px_rgba(29,16,10,0.18)] transition-colors hover:bg-[rgba(29,16,10,0.9)]"
                   aria-label={`Remove screen ${index + 1}`}
                 >
