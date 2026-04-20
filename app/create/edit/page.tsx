@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
@@ -8,6 +9,7 @@ import { ScreenshotList } from "@/components/screenshots/ScreenshotList";
 import { SlideEditor } from "@/components/screenshots/SlideEditor";
 import { Button } from "@/components/ui/button";
 import { useCreateFlow } from "@/app/create/create-flow-context";
+import { clearPreviewSnapshot } from "@/lib/screenshot/preview-snapshot";
 
 export default function EditStepPage() {
   const router = useRouter();
@@ -61,6 +63,12 @@ export default function EditStepPage() {
   const hasPreviousSlide = activeSlideIndex > 0;
   const hasNextSlide = activeSlideIndex < slides.length - 1;
   const showSlideNavigation = slides.length > 1;
+
+  useEffect(() => {
+    if (!slides.length) {
+      clearPreviewSnapshot();
+    }
+  }, [slides.length]);
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">

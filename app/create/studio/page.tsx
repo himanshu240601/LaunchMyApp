@@ -12,7 +12,7 @@ import { PreviewCanvas } from "@/components/screenshots/PreviewCanvas";
 import { ScreenshotList } from "@/components/screenshots/ScreenshotList";
 import { SlideEditor } from "@/components/screenshots/SlideEditor";
 import { useCreateFlow } from "@/app/create/create-flow-context";
-import { savePreviewSnapshot } from "@/lib/screenshot/preview-snapshot";
+import { clearPreviewSnapshot, savePreviewSnapshot } from "@/lib/screenshot/preview-snapshot";
 
 export default function StudioPage() {
   const router = useRouter();
@@ -85,12 +85,14 @@ export default function StudioPage() {
 
   useEffect(() => {
     if (!slides.length) {
+      clearPreviewSnapshot();
       router.replace("/create/edit");
     }
   }, [router, slides.length]);
 
   useEffect(() => {
     if (!slides.length) {
+      clearPreviewSnapshot();
       return;
     }
 

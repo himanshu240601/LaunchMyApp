@@ -1,16 +1,40 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
 import Link from "next/link";
 
 import { heroStats } from "@/data/landing-content";
+import { startGoogleAuth } from "@/lib/supabase/auth";
+import { useSupabaseSession } from "@/lib/supabase/use-supabase-session";
 
 import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export function HeroSection() {
+  const { isAuthenticated } = useSupabaseSession();
+  const [isStartingSignup, setIsStartingSignup] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleStartFree = async () => {
+    setAuthError(null);
+    setIsStartingSignup(true);
+
+    try {
+      await startGoogleAuth("signup");
+    } catch (error) {
+      setAuthError(
+        error instanceof Error
+          ? error.message
+          : "Unable to start sign up right now.",
+      );
+      setIsStartingSignup(false);
+    }
+  };
+
   return (
     <section className="section-shell relative flex min-h-[calc(100svh-5rem)] items-center overflow-hidden pb-16 pt-16 sm:pb-20 sm:pt-20">
       <div className="absolute inset-x-0 top-0 -z-10 h-[42rem] bg-hero-grid bg-[size:52px_52px] opacity-70 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
@@ -41,19 +65,41 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: 0.16, ease }}
-            className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+            className="mt-10 flex flex-col items-center justify-center gap-4"
           >
-            <Link href="/create" className={buttonVariants({ size: "lg", className: "gap-2 px-7" })}>
-              Start Creating for Free
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="#how-it-works"
-              className={buttonVariants({ variant: "secondary", size: "lg", className: "gap-2 px-7" })}
-            >
-              <Play className="h-4 w-4" />
-              See How It Works
-            </Link>
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              {isAuthenticated ? (
+                <Link href="/create" className={buttonVariants({ size: "lg", className: "gap-2 px-7" })}>
+                  Start Creating
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="gap-2 px-7"
+                  onClick={() => {
+                    void handleStartFree();
+                  }}
+                  disabled={isStartingSignup}
+                >
+                  {isStartingSignup ? "Starting..." : "Start Creating for Free"}
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
+              <Link
+                href="#how-it-works"
+                className={buttonVariants({ variant: "secondary", size: "lg", className: "gap-2 px-7" })}
+              >
+                <Play className="h-4 w-4" />
+                See How It Works
+              </Link>
+            </div>
+            {authError ? (
+              <p className="max-w-md text-center text-xs leading-5 text-primary">
+                {authError}
+              </p>
+            ) : null}
           </motion.div>
 
           <motion.div

@@ -76,3 +76,7 @@ export function loadPreviewSnapshot(): PreviewSnapshot | null {
     return null;
   }
 }
+
+export function clearPreviewSnapshot() {
+  localStorage.removeItem(PREVIEW_SNAPSHOT_STORAGE_KEY);
+}

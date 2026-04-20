@@ -129,7 +129,7 @@ export default function PreviewPage() {
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#fffdf9,#f6efe5)] px-6 py-10 sm:px-8">
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-white/80 bg-white/92 p-8 text-center shadow-soft">
-          <p className="text-lg font-semibold text-foreground">No preview available</p>
+          <p className="text-lg font-semibold text-foreground">No content found</p>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             Open Preview from the studio page to generate a live listing preview in this tab.
           </p>
