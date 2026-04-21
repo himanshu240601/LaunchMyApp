@@ -8,7 +8,7 @@ export async function startGoogleAuth(intent: GoogleAuthIntent) {
   const supabase = getSupabaseBrowserClient();
   const redirectUrl = new URL("/auth/callback", window.location.origin);
 
-  redirectUrl.searchParams.set("next", "/create");
+  redirectUrl.searchParams.set("next", "/create/edit");
   redirectUrl.searchParams.set("intent", intent);
 
   const { data, error } = await supabase.auth.signInWithOAuth({

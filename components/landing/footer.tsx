@@ -23,14 +23,14 @@ export function Footer() {
           </div>
         </div>
         <div className="flex gap-5">
-          <Link href="#features" className="transition-colors hover:text-foreground">
-            Features
+          <Link href="/contact" className="transition-colors hover:text-foreground">
+            Contact
           </Link>
-          {/* <Link href="#pricing" className="transition-colors hover:text-foreground">
-            Pricing
-          </Link> */}
-          <Link href="#faq" className="transition-colors hover:text-foreground">
-            FAQ
+          <Link href="/terms-and-conditions" className="transition-colors hover:text-foreground">
+            Terms &amp; Conditions
+          </Link>
+          <Link href="/privacy-policy" className="transition-colors hover:text-foreground">
+            Privacy Policy
           </Link>
         </div>
       </div>

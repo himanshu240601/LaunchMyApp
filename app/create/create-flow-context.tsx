@@ -31,6 +31,7 @@ import {
   type LayoutId,
   type PreviewTemplateId,
 } from "@/lib/screenshot/templates";
+import { clearPreviewSnapshot } from "@/lib/screenshot/preview-snapshot";
 import { downloadZip } from "@/lib/screenshot/zip";
 
 const INVALID_EXPORT_NAME_PATTERN = /[<>:"/\\|?*\u0000-\u001F]/g;
@@ -45,6 +46,17 @@ const DEFAULT_SUBTITLE_SIZE_PX = 48;
 const DEFAULT_TITLE_BASE_SCALE = 1290 * 0.07;
 const DEFAULT_SUBTITLE_BASE_SCALE = 1290 * 0.03;
 const MAX_SCREENSHOTS = 4;
+const MAX_TITLE_CHARACTERS = 20;
+const MAX_SUBTITLE_CHARACTERS = 70;
+
+function clampTitleCharacters(value: string, maxCharacters: number) {
+  return value.slice(0, maxCharacters);
+}
+
+function clampSubtitleCharacters(value: string, maxCharacters: number) {
+  return value.slice(0, maxCharacters);
+}
+
 const DEFAULT_RENDER_CONTROLS: RenderControls = {
   backgroundStyleId: "template-default",
   customBackgroundColor: "#ffffff",
@@ -122,6 +134,7 @@ type CreateFlowContextValue = {
   setFrameEnabled: (enabled: boolean) => void;
   removeSlide: (slideId: string) => void;
   handleExport: () => Promise<boolean>;
+  resetCreateFlow: () => void;
 };
 
 const CreateFlowContext = createContext<CreateFlowContextValue | null>(null);
@@ -401,17 +414,21 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleTitleChange = useCallback((title: string) => {
+    const nextTitle = clampTitleCharacters(title, MAX_TITLE_CHARACTERS);
+
     setSlides((currentSlides) =>
       currentSlides.map((slide, index) =>
-        index === activeSlideIndex ? { ...slide, title } : slide,
+        index === activeSlideIndex ? { ...slide, title: nextTitle } : slide,
       ),
     );
   }, [activeSlideIndex]);
 
   const handleSubtitleChange = useCallback((subtitle: string) => {
+    const nextSubtitle = clampSubtitleCharacters(subtitle, MAX_SUBTITLE_CHARACTERS);
+
     setSlides((currentSlides) =>
       currentSlides.map((slide, index) =>
-        index === activeSlideIndex ? { ...slide, subtitle } : slide,
+        index === activeSlideIndex ? { ...slide, subtitle: nextSubtitle } : slide,
       ),
     );
   }, [activeSlideIndex]);
@@ -496,6 +513,27 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     selectedTemplate,
     slides,
   ]);
+
+  const resetCreateFlow = useCallback(() => {
+    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrlsRef.current = [];
+
+    setSlides([]);
+    setActiveSlideIndex(0);
+    setSelectedPresets(EXPORT_PRESETS);
+    setSelectedTemplate(DEFAULT_PREVIEW_TEMPLATE_ID);
+    setGlobalRenderControls(DEFAULT_RENDER_CONTROLS);
+    setSlideRenderControlsById({});
+    setExportName("Untitled_1");
+    setPreviewPresetId(EXPORT_PRESETS[0].id);
+    setExportQuality("default");
+    setDefaultFrameEnabled(true);
+    setSlideFrameEnabledById({});
+    setApplyPreviewToAllState(true);
+    setPreviewTargetSlideIds([]);
+    setIsExporting(false);
+    clearPreviewSnapshot();
+  }, []);
 
   const toggleExportPreset = useCallback((presetId: string) => {
     setSelectedPresets((currentPresets) => {
@@ -584,6 +622,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       setFrameEnabled,
       removeSlide,
       handleExport,
+      resetCreateFlow,
     }),
     [
       activeSlide,
@@ -622,6 +661,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       handleSubtitleChange,
       handleTitleChange,
       removeSlide,
+      resetCreateFlow,
       setBackgroundStyleId,
       setCustomBackgroundColor,
       setCustomBackgroundOpacity,

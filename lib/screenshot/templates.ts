@@ -137,7 +137,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     title: {
       color: "#20130d",
-      maxWidth: 0.72,
+      maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
       lineHeight: 0.08,
@@ -146,7 +146,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     subtitle: {
       color: "#6d564a",
-      maxWidth: 0.62,
+      maxWidth: 0.72,
       top: 0.205,
       fontScale: 0.03,
       lineHeight: 0.04,
@@ -183,7 +183,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     title: {
       color: "#2b140d",
-      maxWidth: 0.72,
+      maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
       lineHeight: 0.08,
@@ -192,7 +192,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     subtitle: {
       color: "#7a5a47",
-      maxWidth: 0.62,
+      maxWidth: 0.72,
       top: 0.205,
       fontScale: 0.03,
       lineHeight: 0.04,
@@ -229,7 +229,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     title: {
       color: "#33170f",
-      maxWidth: 0.72,
+      maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
       lineHeight: 0.08,
@@ -238,7 +238,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     subtitle: {
       color: "#835f4d",
-      maxWidth: 0.62,
+      maxWidth: 0.72,
       top: 0.205,
       fontScale: 0.03,
       lineHeight: 0.04,
@@ -275,7 +275,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     title: {
       color: "#fff3ea",
-      maxWidth: 0.72,
+      maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
       lineHeight: 0.08,
@@ -284,7 +284,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     },
     subtitle: {
       color: "#d8b7a3",
-      maxWidth: 0.62,
+      maxWidth: 0.72,
       top: 0.205,
       fontScale: 0.03,
       lineHeight: 0.04,

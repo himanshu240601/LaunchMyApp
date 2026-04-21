@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Home } from "lucide-react";
 
 import { ScreenshotList } from "@/components/screenshots/ScreenshotList";
 import { SlideEditor } from "@/components/screenshots/SlideEditor";
@@ -78,9 +78,9 @@ export default function EditStepPage() {
             href="/"
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Back"
-            title="Back"
+            title="Home"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <Home className="h-4 w-4" />
           </Link>
         </div>
         <div className="pointer-events-none absolute inset-x-0 flex justify-center px-16">
@@ -101,8 +101,8 @@ export default function EditStepPage() {
         </Button>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[375px_minmax(0,1fr)]">
-        <aside className="min-h-0 xl:h-full">
+      <div className="grid min-h-0 flex-1 gap-3 xl:[grid-template-columns:375px_minmax(0,1fr)]">
+        <aside className="min-h-0 min-w-0 max-w-full overflow-hidden xl:h-full xl:w-[375px] xl:max-w-[375px] xl:min-w-[375px]">
           <ScreenshotList
             activeSlideIndex={activeSlideIndex}
             slides={slides}
@@ -112,8 +112,8 @@ export default function EditStepPage() {
           />
         </aside>
 
-        <div className="relative min-h-0 xl:h-full">
-          <div className="h-full">
+        <div className="relative min-h-0 min-w-0 xl:h-full">
+          <div className="h-full min-w-0 overflow-hidden">
             <SlideEditor
               slide={activeSlide}
               onTitleChange={handleTitleChange}

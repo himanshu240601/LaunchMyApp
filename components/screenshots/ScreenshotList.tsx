@@ -149,7 +149,7 @@ export function ScreenshotList({
               <button
                 type="button"
                 onClick={() => onSelect(index)}
-                className="flex w-full items-center gap-3 px-3 py-3 text-left"
+                className="flex min-w-0 w-full items-center gap-3 px-3 py-3 text-left"
               >
                 <div
                   className={[
@@ -168,8 +168,12 @@ export function ScreenshotList({
                   >
                     Screen {index + 1}
                   </p>
-                  <p className="mt-1 truncate font-semibold text-foreground">{slide.title}</p>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">{slide.subtitle}</p>
+                  <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-foreground">
+                    {slide.title}
+                  </p>
+                  <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-muted-foreground">
+                    {slide.subtitle}
+                  </p>
                 </div>
               </button>
             </div>

@@ -41,9 +41,11 @@ export type BenefitItem = {
 };
 
 export type TestimonialItem = {
+  id?: string;
   quote: string;
   name: string;
   role: string;
+  rating?: number;
 };
 
 export type PricingTier = {

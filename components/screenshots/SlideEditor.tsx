@@ -118,6 +118,8 @@ export function SlideEditor({
 }: SlideEditorProps) {
   const [activeDesignTab, setActiveDesignTab] = useState<"settings" | "templates" | "export">("settings");
   const [showApplyAllDialog, setShowApplyAllDialog] = useState(false);
+  const titleCharacterCount = slide?.title.length ?? 0;
+  const subtitleCharacterCount = slide?.subtitle.length ?? 0;
   const normalizedColorValue = /^#([0-9a-fA-F]{6})$/.test(customBackgroundColor)
     ? customBackgroundColor
     : "#ffffff";
@@ -237,7 +239,7 @@ export function SlideEditor({
   };
 
   return (
-    <div className={panelless ? "flex h-full min-h-0 flex-col" : "flex h-full min-h-0 flex-col rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft"}>
+    <div className={panelless ? "flex h-full min-h-0 min-w-0 max-w-full w-full flex-col overflow-hidden" : "flex h-full min-h-0 min-w-0 max-w-full w-full flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft"}>
       <ThemedDialog
         open={showApplyAllDialog}
         onClose={() => setShowApplyAllDialog(false)}
@@ -284,32 +286,44 @@ export function SlideEditor({
       {slide ? (
         <div
           className={[
-            hideHeader ? "space-y-4" : panelless ? "mt-3 space-y-4" : "mt-4 space-y-4",
+            hideHeader ? "min-w-0 space-y-4" : panelless ? "mt-3 min-w-0 space-y-4" : "mt-4 min-w-0 space-y-4",
           ].join(" ")}
         >
           {showTextFields ? (
             <>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground" htmlFor="slide-title">
-                  Title
-                </label>
+              <div className="min-w-0 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="block text-sm font-medium text-foreground" htmlFor="slide-title">
+                    Title
+                  </label>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {titleCharacterCount}/20 chars
+                  </span>
+                </div>
                 <input
                   id="slide-title"
                   value={slide.title}
                   onChange={(event) => onTitleChange(event.target.value)}
-                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-foreground outline-none transition-colors focus:border-primary"
+                  maxLength={20}
+                  className="min-w-0 max-w-full w-full overflow-x-hidden rounded-2xl border border-border bg-white px-4 py-3 text-foreground outline-none transition-colors focus:border-primary"
                   placeholder="Enter screen title"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground" htmlFor="slide-subtitle">
-                  Subtitle
-                </label>
+              <div className="min-w-0 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="block text-sm font-medium text-foreground" htmlFor="slide-subtitle">
+                    Subtitle
+                  </label>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {subtitleCharacterCount}/70 chars
+                  </span>
+                </div>
                 <textarea
                   id="slide-subtitle"
                   value={slide.subtitle}
                   onChange={(event) => onSubtitleChange(event.target.value)}
-                  className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-foreground outline-none transition-colors focus:border-primary"
+                  maxLength={70}
+                  className="min-h-28 min-w-0 max-w-full w-full resize-none overflow-x-hidden rounded-2xl border border-border bg-white px-4 py-3 text-foreground outline-none transition-colors focus:border-primary"
                   placeholder="Add supporting copy"
                 />
               </div>

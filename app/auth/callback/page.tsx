@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { fetchCurrentUserProfile } from "@/lib/supabase/profile";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -15,7 +16,8 @@ export default function AuthCallbackPage() {
     let cancelled = false;
 
     async function finishAuth() {
-      const nextPath = searchParams.get("next") || "/create";
+      const nextPath = searchParams.get("next") || "/create/edit";
+      const intent = searchParams.get("intent");
       const code = searchParams.get("code");
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = hashParams.get("access_token");
@@ -62,6 +64,12 @@ export default function AuthCallbackPage() {
 
         if (!cancelled) {
           window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          if (intent === "signup") {
+            const profile = await fetchCurrentUserProfile();
+            router.replace(profile ? nextPath : `/onboarding?next=${encodeURIComponent(nextPath)}`);
+            return;
+          }
+
           router.replace(nextPath);
         }
       } catch (error) {

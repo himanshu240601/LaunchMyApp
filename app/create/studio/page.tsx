@@ -13,10 +13,12 @@ import { ScreenshotList } from "@/components/screenshots/ScreenshotList";
 import { SlideEditor } from "@/components/screenshots/SlideEditor";
 import { useCreateFlow } from "@/app/create/create-flow-context";
 import { clearPreviewSnapshot, savePreviewSnapshot } from "@/lib/screenshot/preview-snapshot";
+import { fetchCurrentUserProfile, type UserProfile } from "@/lib/supabase/profile";
 
 export default function StudioPage() {
   const router = useRouter();
   const [showExportReviewDialog, setShowExportReviewDialog] = useState(false);
+  const [preloadedReviewProfile, setPreloadedReviewProfile] = useState<UserProfile | null>(null);
   const {
     slides,
     activeSlide,
@@ -73,6 +75,7 @@ export default function StudioPage() {
     screenshotOffsetY,
     setScreenshotOffsetY,
     handleExport,
+    resetCreateFlow,
   } = useCreateFlow();
   const trimmedExportName = exportName.trim();
   const exportNameHasInvalidChars = /[<>:"/\\|?*\u0000-\u001F]/.test(exportName);
@@ -153,8 +156,17 @@ export default function StudioPage() {
   const handleExportClick = async () => {
     const exported = await handleExport();
     if (exported) {
+      const profile = await fetchCurrentUserProfile().catch(() => null);
+      setPreloadedReviewProfile(profile);
       setShowExportReviewDialog(true);
     }
+  };
+
+  const handleReviewGoHome = () => {
+    setShowExportReviewDialog(false);
+    setPreloadedReviewProfile(null);
+    resetCreateFlow();
+    router.push("/create/edit");
   };
 
   return (
@@ -162,7 +174,12 @@ export default function StudioPage() {
       {showExportReviewDialog ? (
         <ExportReviewDialog
           open={showExportReviewDialog}
-          onClose={() => setShowExportReviewDialog(false)}
+          onClose={() => {
+            setShowExportReviewDialog(false);
+            setPreloadedReviewProfile(null);
+          }}
+          initialProfile={preloadedReviewProfile}
+          onGoHome={handleReviewGoHome}
           exportName={sanitizeExportName(exportName)}
         />
       ) : null}
@@ -218,9 +235,9 @@ export default function StudioPage() {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 items-start gap-3 xl:grid-cols-[375px_minmax(0,1fr)_400px]">
-        <aside className="grid min-h-0 gap-3 xl:h-full xl:grid-rows-[minmax(0,1fr)_auto]">
-          <div className="min-h-0">
+      <div className="grid min-h-0 flex-1 items-start gap-3 xl:[grid-template-columns:375px_minmax(0,1fr)_400px]">
+        <aside className="min-w-0 max-w-full overflow-hidden grid min-h-0 gap-3 xl:h-full xl:w-[375px] xl:max-w-[375px] xl:min-w-[375px] xl:grid-rows-[minmax(0,1fr)_auto]">
+          <div className="min-h-0 min-w-0 overflow-hidden">
             <ScreenshotList
               activeSlideIndex={activeSlideIndex}
               slides={slides}
@@ -229,7 +246,7 @@ export default function StudioPage() {
               onRemoveSlide={removeSlide}
             />
           </div>
-          <div className="min-h-0">
+          <div className="min-h-0 min-w-0 overflow-hidden">
             <SlideEditor
               slide={activeSlide}
               onTitleChange={handleTitleChange}
@@ -292,7 +309,7 @@ export default function StudioPage() {
           </div>
         </section>
 
-        <aside className="no-scrollbar rounded-[1.75rem] border border-white/70 bg-white/95 shadow-[-18px_0_36px_rgba(65,33,20,0.04)] xl:sticky xl:top-0 xl:h-full xl:overflow-y-auto xl:self-stretch">
+        <aside className="no-scrollbar min-w-0 rounded-[1.75rem] border border-white/70 bg-white/95 shadow-[-18px_0_36px_rgba(65,33,20,0.04)] xl:sticky xl:top-0 xl:h-full xl:w-[400px] xl:overflow-y-auto xl:self-stretch">
           <div className="space-y-5 px-6 py-5">
             <SlideEditor
               slide={activeSlide}

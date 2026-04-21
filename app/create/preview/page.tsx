@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Download, RefreshCw } from "lucide-react";
 
 import { sanitizeExportName } from "@/app/create/create-flow-context";
+import { useCreateFlow } from "@/app/create/create-flow-context";
 import { Button } from "@/components/ui/button";
 import { ExportReviewDialog } from "@/components/screenshots/export-review-dialog";
 import { PreviewCanvas } from "@/components/screenshots/PreviewCanvas";
@@ -14,6 +16,7 @@ import {
   loadPreviewSnapshot,
   type PreviewSnapshot,
 } from "@/lib/screenshot/preview-snapshot";
+import { fetchCurrentUserProfile, type UserProfile } from "@/lib/supabase/profile";
 import { downloadZip } from "@/lib/screenshot/zip";
 
 function formatPresetLabels(snapshot: PreviewSnapshot) {
@@ -40,9 +43,12 @@ function getSlideFrameEnabled(snapshot: PreviewSnapshot, slideId: string) {
 }
 
 export default function PreviewPage() {
+  const router = useRouter();
   const [snapshot, setSnapshot] = useState<PreviewSnapshot | null>(() => loadPreviewSnapshot());
   const [isExporting, setIsExporting] = useState(false);
   const [showExportReviewDialog, setShowExportReviewDialog] = useState(false);
+  const [preloadedReviewProfile, setPreloadedReviewProfile] = useState<UserProfile | null>(null);
+  const { resetCreateFlow } = useCreateFlow();
   const syncSnapshot = useCallback(() => {
     setSnapshot(loadPreviewSnapshot());
   }, []);
@@ -119,6 +125,8 @@ export default function PreviewPage() {
       }
 
       await downloadZip(files, `${sanitizeExportName(snapshot.exportName)}.zip`);
+      const profile = await fetchCurrentUserProfile().catch(() => null);
+      setPreloadedReviewProfile(profile);
       setShowExportReviewDialog(true);
     } finally {
       setIsExporting(false);
@@ -144,12 +152,24 @@ export default function PreviewPage() {
     );
   }
 
+  const handleReviewGoHome = () => {
+    setShowExportReviewDialog(false);
+    setPreloadedReviewProfile(null);
+    resetCreateFlow();
+    router.push("/create/edit");
+  };
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,167,111,0.12),transparent_28%),linear-gradient(180deg,#fffdf9,#f6efe5)] text-foreground">
       {showExportReviewDialog ? (
         <ExportReviewDialog
           open={showExportReviewDialog}
-          onClose={() => setShowExportReviewDialog(false)}
+          onClose={() => {
+            setShowExportReviewDialog(false);
+            setPreloadedReviewProfile(null);
+          }}
+          initialProfile={preloadedReviewProfile}
+          onGoHome={handleReviewGoHome}
           exportName={sanitizeExportName(snapshot.exportName)}
         />
       ) : null}

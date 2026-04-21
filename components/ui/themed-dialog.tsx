@@ -6,13 +6,16 @@ import { X } from "lucide-react";
 
 type ThemedDialogProps = {
   open: boolean;
-  title: string;
+  title?: string;
   description?: string;
   children?: ReactNode;
   footer?: ReactNode;
   onClose: () => void;
   size?: "md" | "lg";
   closeLabel?: string;
+  eyebrow?: string;
+  showCloseButton?: boolean;
+  closeButtonPosition?: "left" | "right";
 };
 
 export function ThemedDialog({
@@ -24,6 +27,9 @@ export function ThemedDialog({
   onClose,
   size = "md",
   closeLabel = "Close dialog",
+  eyebrow,
+  showCloseButton = true,
+  closeButtonPosition = "right",
 }: ThemedDialogProps) {
   useEffect(() => {
     if (!open) {
@@ -51,27 +57,47 @@ export function ThemedDialog({
         ].join(" ")}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="themed-dialog-title"
+        aria-labelledby={title ? "themed-dialog-title" : undefined}
       >
         <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,167,111,0.22),transparent_72%)]" />
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/88 text-muted-foreground shadow-[0_12px_26px_rgba(65,33,20,0.12)] transition-colors hover:text-foreground"
-          aria-label={closeLabel}
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {showCloseButton ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className={[
+              "absolute top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/88 text-muted-foreground shadow-[0_12px_26px_rgba(65,33,20,0.12)] transition-colors hover:text-foreground",
+              closeButtonPosition === "left" ? "left-4" : "right-4",
+            ].join(" ")}
+            aria-label={closeLabel}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : null}
         <div className="relative p-6 sm:p-7">
-          <div className="pr-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              LaunchMyApp
-            </p>
-            <h2 id="themed-dialog-title" className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-              {title}
-            </h2>
+          <div
+            className={
+              showCloseButton
+                ? closeButtonPosition === "left"
+                  ? "pl-12"
+                  : "pr-12"
+                : undefined
+            }
+          >
+            {eyebrow ? (
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {eyebrow}
+              </p>
+            ) : null}
+            {title ? (
+              <h2
+                id="themed-dialog-title"
+                className={[eyebrow ? "mt-2" : "mt-0", "text-2xl font-semibold tracking-tight text-foreground"].join(" ")}
+              >
+                {title}
+              </h2>
+            ) : null}
             {description ? (
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              <p className={[title ? "mt-3" : "mt-2", "text-sm leading-6 text-muted-foreground"].join(" ")}>
                 {description}
               </p>
             ) : null}

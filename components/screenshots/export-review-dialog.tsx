@@ -1,23 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle2, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ThemedDialog } from "@/components/ui/themed-dialog";
-
-const REVIEW_STORAGE_KEY = "launchmyapp.export-reviews";
+import { fetchCurrentUserProfile, type UserProfile } from "@/lib/supabase/profile";
+import { submitReview } from "@/lib/supabase/reviews";
 
 type ExportReviewDialogProps = {
   open: boolean;
   onClose: () => void;
   exportName: string;
+  initialProfile?: UserProfile | null;
+  onGoHome?: () => void;
 };
 
 const INITIAL_REVIEW_STATE = {
   rating: 5,
-  name: "",
-  role: "",
   message: "",
 };
 
@@ -25,40 +25,89 @@ export function ExportReviewDialog({
   open,
   onClose,
   exportName,
+  initialProfile = null,
+  onGoHome,
 }: ExportReviewDialogProps) {
   const [rating, setRating] = useState(INITIAL_REVIEW_STATE.rating);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
-  const [name, setName] = useState(INITIAL_REVIEW_STATE.name);
-  const [role, setRole] = useState(INITIAL_REVIEW_STATE.role);
   const [message, setMessage] = useState(INITIAL_REVIEW_STATE.message);
+  const [profile, setProfile] = useState<UserProfile | null>(initialProfile);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const visibleRating = hoveredRating ?? rating;
 
-  const canSubmit = name.trim().length > 0 && role.trim().length > 0 && message.trim().length > 0;
-  const handleSubmit = () => {
-    if (!canSubmit || typeof window === "undefined") {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProfile() {
+      if (!open || submitted) {
+        return;
+      }
+
+      if (initialProfile) {
+        setProfile(initialProfile);
+        setSubmitError(
+          initialProfile ? null : "Complete your profile before leaving a review.",
+        );
+        return;
+      }
+
+      setIsLoadingProfile(true);
+
+      try {
+        const nextProfile = await fetchCurrentUserProfile();
+        if (!cancelled) {
+          setProfile(nextProfile);
+          setSubmitError(
+            nextProfile ? null : "Complete your profile before leaving a review.",
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setSubmitError("Unable to load your profile right now.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingProfile(false);
+        }
+      }
+    }
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialProfile, open, submitted]);
+
+  const canSubmit = message.trim().length > 0 && !!profile && !isLoadingProfile;
+  const showSimpleSuccessState = Boolean(profile?.has_submitted_review) && !submitted;
+  const handleSubmit = async () => {
+    if (!canSubmit) {
       return;
     }
 
-    const existingReviews = window.localStorage.getItem(REVIEW_STORAGE_KEY);
-    const parsedReviews = existingReviews ? (JSON.parse(existingReviews) as unknown[]) : [];
+    setSubmitError(null);
+    setIsSubmitting(true);
 
-    window.localStorage.setItem(
-      REVIEW_STORAGE_KEY,
-      JSON.stringify([
-        ...parsedReviews,
-        {
-          rating,
-          name: name.trim(),
-          role: role.trim(),
-          message: message.trim(),
-          exportName,
-          createdAt: Date.now(),
-        },
-      ]),
-    );
-
-    setSubmitted(true);
+    try {
+      await submitReview({
+        exportName,
+        message: message.trim(),
+        rating,
+      });
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save your review right now.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -66,17 +115,33 @@ export function ExportReviewDialog({
       open={open}
       onClose={onClose}
       size="lg"
+      showCloseButton={submitted || showSimpleSuccessState}
+      closeButtonPosition="right"
       title={submitted ? "Thanks for the review" : "Export complete"}
       description={
         submitted
           ? "Your feedback helps us shape the next polishing pass for LaunchMyApp."
-          : `Your screenshots were exported successfully${exportName ? ` for ${exportName}` : ""}. If you have a minute, share a quick review while everything is fresh.`
+          : showSimpleSuccessState
+            ? `Your screenshots were exported successfully${exportName ? ` for ${exportName}` : ""}.`
+            : `Your screenshots were exported successfully${exportName ? ` for ${exportName}` : ""}. If you have a minute, share a quick review.`
       }
       footer={
-        submitted ? (
-          <div className="flex justify-end">
-            <Button type="button" className="rounded-full" onClick={onClose}>
-              Close
+        submitted || showSimpleSuccessState ? (
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="rounded-full border border-border bg-white text-foreground shadow-none ring-0 hover:bg-white"
+              onClick={onGoHome ?? onClose}
+            >
+              Home
+            </Button>
+            <Button
+              type="button"
+              className="rounded-full"
+              onClick={onClose}
+            >
+              Okay
             </Button>
           </div>
         ) : (
@@ -92,38 +157,26 @@ export function ExportReviewDialog({
             <Button
               type="button"
               className="rounded-full"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
+              onClick={() => {
+                void handleSubmit();
+              }}
+              disabled={!canSubmit || isSubmitting}
             >
-              Submit review
+              {isSubmitting ? "Saving..." : "Submit review"}
             </Button>
           </div>
         )
       }
     >
-      {submitted ? (
-        <div className="rounded-[1.5rem] border border-border/80 bg-white/75 p-5">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <CheckCircle2 className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-base font-semibold text-foreground">
-                Review captured
-              </p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Your note was saved on this device, so we can keep the experience smooth now and wire in a real reviews destination later.
-              </p>
-            </div>
-          </div>
-        </div>
+      {submitted || showSimpleSuccessState ? (
+        <div className="py-1" />
       ) : (
         <div className="space-y-4">
           <div className="rounded-[1.5rem] border border-border/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(255,247,241,0.9))] p-4">
             <div className="text-center">
-              <p className="text-sm font-medium text-foreground">Rate your export experience</p>
+              <p className="text-sm font-medium text-foreground">Rate your experience</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                Your feedback helps us make screenshot creation feel even smoother.
+                Your feedback helps improve the app.
               </p>
             </div>
             <div
@@ -162,27 +215,6 @@ export function ExportReviewDialog({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-foreground">Your name</span>
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
-                placeholder="Alex Morgan"
-              />
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-foreground">What do you do?</span>
-              <input
-                value={role}
-                onChange={(event) => setRole(event.target.value)}
-                className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
-                placeholder="Indie app founder"
-              />
-            </label>
-          </div>
-
           <label className="space-y-2">
             <span className="text-sm font-medium text-foreground">Your review</span>
             <textarea
@@ -192,6 +224,9 @@ export function ExportReviewDialog({
               placeholder="What felt smooth, what helped, or what should get better next."
             />
           </label>
+          {submitError ? (
+            <p className="text-sm leading-6 text-primary">{submitError}</p>
+          ) : null}
         </div>
       )}
     </ThemedDialog>
