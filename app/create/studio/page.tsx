@@ -34,8 +34,12 @@ export default function StudioPage() {
     setSelectedTemplate,
     customBackgroundColor,
     setCustomBackgroundColor,
+    customBackgroundAccentColor,
+    setCustomBackgroundAccentColor,
     customBackgroundOpacity,
     setCustomBackgroundOpacity,
+    customBackgroundAccentOpacity,
+    setCustomBackgroundAccentOpacity,
     customTextColor,
     setCustomTextColor,
     layout,
@@ -75,6 +79,7 @@ export default function StudioPage() {
     screenshotOffsetY,
     setScreenshotOffsetY,
     handleExport,
+    resetPreviewEditorState,
     resetCreateFlow,
   } = useCreateFlow();
   const trimmedExportName = exportName.trim();
@@ -88,10 +93,11 @@ export default function StudioPage() {
 
   useEffect(() => {
     if (!slides.length) {
+      resetPreviewEditorState();
       clearPreviewSnapshot();
       router.replace("/create/edit");
     }
-  }, [router, slides.length]);
+  }, [resetPreviewEditorState, router, slides.length]);
 
   useEffect(() => {
     if (!slides.length) {
@@ -190,6 +196,9 @@ export default function StudioPage() {
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Back"
             title="Back"
+            onClick={() => {
+              resetPreviewEditorState();
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
@@ -255,8 +264,12 @@ export default function StudioPage() {
               onTemplateChange={setSelectedTemplate}
               customBackgroundColor={customBackgroundColor}
               onCustomBackgroundColorChange={setCustomBackgroundColor}
+              customBackgroundAccentColor={customBackgroundAccentColor}
+              onCustomBackgroundAccentColorChange={setCustomBackgroundAccentColor}
               customBackgroundOpacity={customBackgroundOpacity}
               onCustomBackgroundOpacityChange={setCustomBackgroundOpacity}
+              customBackgroundAccentOpacity={customBackgroundAccentOpacity}
+              onCustomBackgroundAccentOpacityChange={setCustomBackgroundAccentOpacity}
               customTextColor={customTextColor}
               onCustomTextColorChange={setCustomTextColor}
               layout={layout}
@@ -319,8 +332,12 @@ export default function StudioPage() {
               onTemplateChange={setSelectedTemplate}
               customBackgroundColor={customBackgroundColor}
               onCustomBackgroundColorChange={setCustomBackgroundColor}
+              customBackgroundAccentColor={customBackgroundAccentColor}
+              onCustomBackgroundAccentColorChange={setCustomBackgroundAccentColor}
               customBackgroundOpacity={customBackgroundOpacity}
               onCustomBackgroundOpacityChange={setCustomBackgroundOpacity}
+              customBackgroundAccentOpacity={customBackgroundAccentOpacity}
+              onCustomBackgroundAccentOpacityChange={setCustomBackgroundAccentOpacity}
               customTextColor={customTextColor}
               onCustomTextColorChange={setCustomTextColor}
               layout={layout}

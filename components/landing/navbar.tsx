@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { navItems } from "@/data/landing-content";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ThemedDialog } from "@/components/ui/themed-dialog";
 
 export function Navbar() {
+  const pathname = usePathname();
   const { isAuthenticated } = useSupabaseSession();
   const [isLoadingIntent, setIsLoadingIntent] = useState<"signin" | "signup" | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -103,7 +105,11 @@ export function Navbar() {
           {navItems.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              href={
+                item.href.startsWith("#") && pathname !== "/"
+                  ? `/${item.href}`
+                  : item.href
+              }
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {item.label}

@@ -28,8 +28,12 @@ export default function EditStepPage() {
     setSelectedTemplate,
     customBackgroundColor,
     setCustomBackgroundColor,
+    customBackgroundAccentColor,
+    setCustomBackgroundAccentColor,
     customBackgroundOpacity,
     setCustomBackgroundOpacity,
+    customBackgroundAccentOpacity,
+    setCustomBackgroundAccentOpacity,
     customTextColor,
     setCustomTextColor,
     layout,
@@ -59,6 +63,7 @@ export default function EditStepPage() {
     setScreenshotOffsetX,
     screenshotOffsetY,
     setScreenshotOffsetY,
+    resetPreviewEditorState,
   } = useCreateFlow();
   const hasPreviousSlide = activeSlideIndex > 0;
   const hasNextSlide = activeSlideIndex < slides.length - 1;
@@ -66,9 +71,10 @@ export default function EditStepPage() {
 
   useEffect(() => {
     if (!slides.length) {
+      resetPreviewEditorState();
       clearPreviewSnapshot();
     }
-  }, [slides.length]);
+  }, [resetPreviewEditorState, slides.length]);
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
@@ -122,8 +128,12 @@ export default function EditStepPage() {
               onTemplateChange={setSelectedTemplate}
               customBackgroundColor={customBackgroundColor}
               onCustomBackgroundColorChange={setCustomBackgroundColor}
+              customBackgroundAccentColor={customBackgroundAccentColor}
+              onCustomBackgroundAccentColorChange={setCustomBackgroundAccentColor}
               customBackgroundOpacity={customBackgroundOpacity}
               onCustomBackgroundOpacityChange={setCustomBackgroundOpacity}
+              customBackgroundAccentOpacity={customBackgroundAccentOpacity}
+              onCustomBackgroundAccentOpacityChange={setCustomBackgroundAccentOpacity}
               customTextColor={customTextColor}
               onCustomTextColorChange={setCustomTextColor}
               layout={layout}

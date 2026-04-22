@@ -27,6 +27,12 @@ export type TemplateBackground =
       base: string;
       accentA: string;
       accentB: string;
+    }
+  | {
+      kind: "linear-sunrise";
+      base: string;
+      accentA: string;
+      accentB: string;
     };
 
 export type TemplateTextConfig = {
@@ -140,7 +146,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
       maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
-      lineHeight: 0.08,
+      lineHeight: 0.092,
       maxLines: 2,
       align: "center",
     },
@@ -186,7 +192,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
       maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
-      lineHeight: 0.08,
+      lineHeight: 0.092,
       maxLines: 2,
       align: "center",
     },
@@ -222,17 +228,17 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
     id: "gradient-center",
     label: "Gradient",
     background: {
-      kind: "radial-center",
-      base: "#fdf7f1",
-      accentA: "rgba(255, 145, 77, 0.32)",
-      accentB: "rgba(255, 216, 191, 0.6)",
+      kind: "linear-sunrise",
+      base: "#fff7ef",
+      accentA: "#ffd3ad",
+      accentB: "#ff8a4c",
     },
     title: {
       color: "#33170f",
       maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
-      lineHeight: 0.08,
+      lineHeight: 0.092,
       maxLines: 2,
       align: "center",
     },
@@ -278,7 +284,7 @@ export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
       maxWidth: 0.8,
       top: 0.11,
       fontScale: 0.07,
-      lineHeight: 0.08,
+      lineHeight: 0.092,
       maxLines: 2,
       align: "center",
     },

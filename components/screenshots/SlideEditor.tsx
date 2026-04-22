@@ -31,8 +31,12 @@ type SlideEditorProps = {
   onTemplateChange: (template: PreviewTemplateId) => void;
   customBackgroundColor: string;
   onCustomBackgroundColorChange: (value: string) => void;
+  customBackgroundAccentColor: string;
+  onCustomBackgroundAccentColorChange: (value: string) => void;
   customBackgroundOpacity: number;
   onCustomBackgroundOpacityChange: (value: number) => void;
+  customBackgroundAccentOpacity: number;
+  onCustomBackgroundAccentOpacityChange: (value: number) => void;
   customTextColor: string;
   onCustomTextColorChange: (value: string) => void;
   layout: LayoutId;
@@ -78,8 +82,12 @@ export function SlideEditor({
   onTemplateChange,
   customBackgroundColor,
   onCustomBackgroundColorChange,
+  customBackgroundAccentColor,
+  onCustomBackgroundAccentColorChange,
   customBackgroundOpacity,
   onCustomBackgroundOpacityChange,
+  customBackgroundAccentOpacity,
+  onCustomBackgroundAccentOpacityChange,
   customTextColor,
   onCustomTextColorChange,
   layout,
@@ -123,6 +131,9 @@ export function SlideEditor({
   const normalizedColorValue = /^#([0-9a-fA-F]{6})$/.test(customBackgroundColor)
     ? customBackgroundColor
     : "#ffffff";
+  const normalizedAccentColorValue = /^#([0-9a-fA-F]{6})$/.test(customBackgroundAccentColor)
+    ? customBackgroundAccentColor
+    : "#ff8a4c";
   const normalizedTextColorValue = /^#([0-9a-fA-F]{6})$/.test(customTextColor)
     ? customTextColor
     : "#20130d";
@@ -496,6 +507,37 @@ export function SlideEditor({
                           showOpacity: true,
                         })}
                       </div>
+                    ) : selectedTemplate === "gradient-center" ? (
+                      <div className="space-y-3">
+                        <div>
+                          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                            Gradient 1
+                          </p>
+                          {renderColorField({
+                            colorValue: normalizedColorValue,
+                            opacity: customBackgroundOpacity,
+                            onColorChange: onCustomBackgroundColorChange,
+                            onOpacityChange: onCustomBackgroundOpacityChange,
+                            inputId: "gradient-1-hex",
+                            fallbackColor: "#FFD3AD",
+                            showOpacity: true,
+                          })}
+                        </div>
+                        <div>
+                          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                            Gradient 2
+                          </p>
+                          {renderColorField({
+                            colorValue: normalizedAccentColorValue,
+                            opacity: customBackgroundAccentOpacity,
+                            onColorChange: onCustomBackgroundAccentColorChange,
+                            onOpacityChange: onCustomBackgroundAccentOpacityChange,
+                            inputId: "gradient-2-hex",
+                            fallbackColor: "#FF8A4C",
+                            showOpacity: true,
+                          })}
+                        </div>
+                      </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
                         {BACKGROUND_STYLE_OPTIONS.map((backgroundOption) => (
@@ -697,6 +739,11 @@ export function SlideEditor({
                 </div>
               ) : (
                 <div className="space-y-2.5">
+                  <div className="rounded-[1.25rem] border border-border bg-background/80 px-4 py-3">
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Templates always apply across all screens.
+                    </p>
+                  </div>
                   <p className="text-sm font-medium text-foreground">Templates</p>
                   <div className="grid gap-2">
                     {SCREENSHOT_TEMPLATES.filter((template) => template.id === "default").map((template) => (

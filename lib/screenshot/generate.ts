@@ -13,7 +13,9 @@ import {
 export type RenderControls = {
   backgroundStyleId?: BackgroundStyleId;
   customBackgroundColor?: string;
+  customBackgroundAccentColor?: string;
   customBackgroundOpacity?: number;
+  customBackgroundAccentOpacity?: number;
   customTextColor?: string;
   fontFamilyId?: FontFamilyId;
   titleScaleMultiplier?: number;
@@ -33,13 +35,23 @@ type RenderSlideOptions = {
   controls?: RenderControls;
 };
 
+const imageCache = new Map<string, Promise<HTMLImageElement>>();
+
 function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
+  const existing = imageCache.get(src);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = reject;
     image.src = src;
   });
+
+  imageCache.set(src, promise);
+  return promise;
 }
 
 function wrapText(
@@ -135,6 +147,7 @@ export async function renderSlideToCanvas(
   const frameEnabled = options.frameEnabled ?? true;
   const controls = options.controls ?? {};
   const customBackgroundOpacity = controls.customBackgroundOpacity ?? 1;
+  const customBackgroundAccentOpacity = controls.customBackgroundAccentOpacity ?? 1;
   const backgroundStyle = controls.backgroundStyleId
     ? getBackgroundStyle(controls.backgroundStyleId)?.background
     : null;
@@ -146,6 +159,17 @@ export async function renderSlideToCanvas(
           accentA: "rgba(255, 255, 255, 0)",
           accentB: "rgba(255, 255, 255, 0)",
         }
+      : controls.customBackgroundColor &&
+          template.id === "gradient-center"
+        ? {
+            kind: "linear-sunrise" as const,
+            base: template.background.base,
+            accentA: hexToRgba(controls.customBackgroundColor, customBackgroundOpacity),
+            accentB: hexToRgba(
+              controls.customBackgroundAccentColor ?? "#ff8a4c",
+              customBackgroundAccentOpacity,
+            ),
+          }
       : backgroundStyle ?? template.background;
   const fontFamilyStack = getFontFamilyStack(controls.fontFamilyId ?? "display");
   const titleScaleMultiplier = controls.titleScaleMultiplier ?? 1.2;
@@ -180,15 +204,43 @@ export async function renderSlideToCanvas(
     context.fillRect(0, 0, preset.width, preset.height);
   }
 
-  context.fillStyle = background.accentA;
-  context.beginPath();
-  context.arc(preset.width * 0.82, preset.height * 0.16, preset.width * 0.18, 0, Math.PI * 2);
-  context.fill();
+  if (background.kind === "linear-sunrise") {
+    const gradient = context.createLinearGradient(
+      0,
+      0,
+      preset.width,
+      preset.height,
+    );
+    gradient.addColorStop(0, background.accentA);
+    gradient.addColorStop(1, background.accentB);
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, preset.width, preset.height);
 
-  context.fillStyle = background.accentB;
-  context.beginPath();
-  context.arc(preset.width * 0.16, preset.height * 0.84, preset.width * 0.16, 0, Math.PI * 2);
-  context.fill();
+    const glow = context.createRadialGradient(
+      preset.width * 0.18,
+      preset.height * 0.14,
+      preset.width * 0.02,
+      preset.width * 0.18,
+      preset.height * 0.14,
+      preset.width * 0.52,
+    );
+    glow.addColorStop(0, "rgba(255,255,255,0.22)");
+    glow.addColorStop(1, "rgba(255,255,255,0)");
+    context.fillStyle = glow;
+    context.fillRect(0, 0, preset.width, preset.height);
+  }
+
+  if (background.kind !== "linear-sunrise") {
+    context.fillStyle = background.accentA;
+    context.beginPath();
+    context.arc(preset.width * 0.82, preset.height * 0.16, preset.width * 0.18, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = background.accentB;
+    context.beginPath();
+    context.arc(preset.width * 0.16, preset.height * 0.84, preset.width * 0.16, 0, Math.PI * 2);
+    context.fill();
+  }
 
   const image = await loadImage(slide.image);
   const frameAsset =

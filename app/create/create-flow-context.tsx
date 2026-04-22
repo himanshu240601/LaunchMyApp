@@ -60,7 +60,9 @@ function clampSubtitleCharacters(value: string, maxCharacters: number) {
 const DEFAULT_RENDER_CONTROLS: RenderControls = {
   backgroundStyleId: "template-default",
   customBackgroundColor: "#ffffff",
+  customBackgroundAccentColor: "#ff8a4c",
   customBackgroundOpacity: 1,
+  customBackgroundAccentOpacity: 1,
   customTextColor: "#20130d",
   fontFamilyId: "display",
   layout: "text-top-image-bottom",
@@ -69,7 +71,7 @@ const DEFAULT_RENDER_CONTROLS: RenderControls = {
   subtitleSpacingMultiplier: 1,
   textOffsetX: 0,
   textOffsetY: 0,
-  screenshotScaleMultiplier: 1,
+  screenshotScaleMultiplier: 1.1,
   screenshotOffsetX: 0,
   screenshotOffsetY: 0,
 };
@@ -82,7 +84,9 @@ type CreateFlowContextValue = {
   selectedTemplate: PreviewTemplateId;
   backgroundStyleId: BackgroundStyleId;
   customBackgroundColor: string;
+  customBackgroundAccentColor: string;
   customBackgroundOpacity: number;
+  customBackgroundAccentOpacity: number;
   customTextColor: string;
   fontFamilyId: FontFamilyId;
   layout: LayoutId;
@@ -113,7 +117,9 @@ type CreateFlowContextValue = {
   setSelectedTemplate: (template: PreviewTemplateId) => void;
   setBackgroundStyleId: (backgroundStyleId: BackgroundStyleId) => void;
   setCustomBackgroundColor: (value: string) => void;
+  setCustomBackgroundAccentColor: (value: string) => void;
   setCustomBackgroundOpacity: (value: number) => void;
+  setCustomBackgroundAccentOpacity: (value: number) => void;
   setCustomTextColor: (value: string) => void;
   setFontFamilyId: (fontFamilyId: FontFamilyId) => void;
   setLayout: (layout: LayoutId) => void;
@@ -134,6 +140,7 @@ type CreateFlowContextValue = {
   setFrameEnabled: (enabled: boolean) => void;
   removeSlide: (slideId: string) => void;
   handleExport: () => Promise<boolean>;
+  resetPreviewEditorState: () => void;
   resetCreateFlow: () => void;
 };
 
@@ -225,8 +232,13 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   const backgroundStyleId = renderControls.backgroundStyleId ?? DEFAULT_RENDER_CONTROLS.backgroundStyleId!;
   const customBackgroundColor =
     renderControls.customBackgroundColor ?? DEFAULT_RENDER_CONTROLS.customBackgroundColor!;
+  const customBackgroundAccentColor =
+    renderControls.customBackgroundAccentColor ?? DEFAULT_RENDER_CONTROLS.customBackgroundAccentColor!;
   const customBackgroundOpacity =
     renderControls.customBackgroundOpacity ?? DEFAULT_RENDER_CONTROLS.customBackgroundOpacity!;
+  const customBackgroundAccentOpacity =
+    renderControls.customBackgroundAccentOpacity ??
+    DEFAULT_RENDER_CONTROLS.customBackgroundAccentOpacity!;
   const customTextColor = renderControls.customTextColor ?? DEFAULT_RENDER_CONTROLS.customTextColor!;
   const fontFamilyId = renderControls.fontFamilyId ?? DEFAULT_RENDER_CONTROLS.fontFamilyId!;
   const layout = renderControls.layout ?? DEFAULT_RENDER_CONTROLS.layout!;
@@ -326,8 +338,14 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   const setCustomBackgroundColor = useCallback((value: string) => {
     updateRenderControls({ customBackgroundColor: value });
   }, [updateRenderControls]);
+  const setCustomBackgroundAccentColor = useCallback((value: string) => {
+    updateRenderControls({ customBackgroundAccentColor: value });
+  }, [updateRenderControls]);
   const setCustomBackgroundOpacity = useCallback((value: number) => {
     updateRenderControls({ customBackgroundOpacity: value });
+  }, [updateRenderControls]);
+  const setCustomBackgroundAccentOpacity = useCallback((value: number) => {
+    updateRenderControls({ customBackgroundAccentOpacity: value });
   }, [updateRenderControls]);
   const setCustomTextColor = useCallback((value: string) => {
     updateRenderControls({ customTextColor: value });
@@ -380,6 +398,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   }, [slides]);
   const handleFilesSelected = useCallback((files: File[]) => {
     const timestamp = Date.now();
+    const validFiles = files.filter((file) => file.type.startsWith("image/"));
 
     setSlides((currentSlides) => {
       const availableSlots = Math.max(0, MAX_SCREENSHOTS - currentSlides.length);
@@ -387,7 +406,6 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
         return currentSlides;
       }
 
-      const validFiles = files.filter((file) => file.type.startsWith("image/"));
       if (!validFiles.length) {
         return currentSlides;
       }
@@ -514,12 +532,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     slides,
   ]);
 
-  const resetCreateFlow = useCallback(() => {
-    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-    objectUrlsRef.current = [];
-
-    setSlides([]);
-    setActiveSlideIndex(0);
+  const resetPreviewEditorState = useCallback(() => {
     setSelectedPresets(EXPORT_PRESETS);
     setSelectedTemplate(DEFAULT_PREVIEW_TEMPLATE_ID);
     setGlobalRenderControls(DEFAULT_RENDER_CONTROLS);
@@ -531,9 +544,18 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     setSlideFrameEnabledById({});
     setApplyPreviewToAllState(true);
     setPreviewTargetSlideIds([]);
-    setIsExporting(false);
     clearPreviewSnapshot();
   }, []);
+
+  const resetCreateFlow = useCallback(() => {
+    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrlsRef.current = [];
+
+    setSlides([]);
+    setActiveSlideIndex(0);
+    setIsExporting(false);
+    resetPreviewEditorState();
+  }, [resetPreviewEditorState]);
 
   const toggleExportPreset = useCallback((presetId: string) => {
     setSelectedPresets((currentPresets) => {
@@ -570,7 +592,9 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       selectedTemplate,
       backgroundStyleId,
       customBackgroundColor,
+      customBackgroundAccentColor,
       customBackgroundOpacity,
+      customBackgroundAccentOpacity,
       customTextColor,
       fontFamilyId,
       layout,
@@ -601,7 +625,9 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       setSelectedTemplate,
       setBackgroundStyleId,
       setCustomBackgroundColor,
+      setCustomBackgroundAccentColor,
       setCustomBackgroundOpacity,
+      setCustomBackgroundAccentOpacity,
       setCustomTextColor,
       setFontFamilyId,
       setLayout,
@@ -622,6 +648,7 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       setFrameEnabled,
       removeSlide,
       handleExport,
+      resetPreviewEditorState,
       resetCreateFlow,
     }),
     [
@@ -629,7 +656,9 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       activeSlideIndex,
       backgroundStyleId,
       customBackgroundColor,
+      customBackgroundAccentColor,
       customBackgroundOpacity,
+      customBackgroundAccentOpacity,
       customTextColor,
       defaultFrameEnabled,
       globalRenderControls,
@@ -662,9 +691,12 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       handleTitleChange,
       removeSlide,
       resetCreateFlow,
+      resetPreviewEditorState,
       setBackgroundStyleId,
       setCustomBackgroundColor,
+      setCustomBackgroundAccentColor,
       setCustomBackgroundOpacity,
+      setCustomBackgroundAccentOpacity,
       setCustomTextColor,
       setFontFamilyId,
       setFrameEnabled,

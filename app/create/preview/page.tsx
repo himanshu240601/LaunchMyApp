@@ -139,13 +139,13 @@ export default function PreviewPage() {
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-white/80 bg-white/92 p-8 text-center shadow-soft">
           <p className="text-lg font-semibold text-foreground">No content found</p>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Open Preview from the studio page to generate a live listing preview in this tab.
+            Open Preview from the Preview Editor to get a live listing preview in this tab.
           </p>
           <Link
             href="/create/studio"
             className="mt-6 inline-flex h-11 items-center justify-center rounded-full border border-border bg-background px-5 text-sm font-semibold text-foreground transition-colors hover:bg-white"
           >
-            Back to Studio
+            Back
           </Link>
         </div>
       </main>

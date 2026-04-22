@@ -43,20 +43,19 @@ export function ContactForm() {
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-        Send us a message
-      </h2>
-      <p className="mt-3 text-sm leading-7 text-muted-foreground">
-        Share your question, feedback, or request and we&apos;ll have this ready
-        as the main contact intake flow.
-      </p>
-      {isAuthenticated ? (
-        <p className="mt-3 text-sm leading-7 text-muted-foreground">
-          You&apos;re signed in, so we&apos;ll use your account details and only ask for your message here.
-        </p>
+      {!isAuthenticated ? (
+        <>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Send us a message
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+            Share your question, feedback, or request and we&apos;ll have this ready
+            as the main contact intake flow.
+          </p>
+        </>
       ) : null}
 
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+      <form className={isAuthenticated ? "space-y-4" : "mt-6 space-y-4"} onSubmit={handleSubmit}>
         {!isAuthenticated ? (
           <>
             <label className="block space-y-2">
@@ -104,7 +103,7 @@ export function ContactForm() {
 
         {submitted ? (
           <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            Thanks. Your message is ready for the contact workflow.
+            Thanks. Your message is sent.
           </p>
         ) : null}
 
