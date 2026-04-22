@@ -92,7 +92,9 @@ export function ContactForm() {
         ) : null}
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-foreground">Message</span>
+          {!isAuthenticated ? (
+            <span className="text-sm font-medium text-foreground">Message</span>
+          ) : null}
           <textarea
             value={form.message}
             onChange={(event) => updateField("message", event.target.value)}
