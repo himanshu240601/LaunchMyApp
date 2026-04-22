@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
@@ -17,7 +17,24 @@ const ROLE_OPTIONS = [
   "Other",
 ] as const;
 
-export default function OnboardingPage() {
+function OnboardingFallback() {
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,167,111,0.12),transparent_28%),linear-gradient(180deg,#fffdf9,#f6efe5)] px-6 py-10 sm:px-8">
+      <div className="mx-auto max-w-3xl rounded-[2.2rem] border border-white/80 bg-white/90 p-8 shadow-soft sm:p-10">
+        <p className="text-sm font-medium text-muted-foreground">Welcome</p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          Tell us a little about you
+        </h1>
+        <p className="mt-4 max-w-2xl text-base leading-8 text-muted-foreground">
+          Before you start creating screenshots, add your name and choose what you do.
+          This will help to personalize your experience.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading } = useSupabaseSession();
@@ -171,5 +188,13 @@ export default function OnboardingPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<OnboardingFallback />}>
+      <OnboardingContent />
+    </Suspense>
   );
 }
