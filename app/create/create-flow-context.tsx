@@ -65,6 +65,11 @@ const DEFAULT_RENDER_CONTROLS: RenderControls = {
   customBackgroundAccentOpacity: 1,
   customTextColor: "#20130d",
   fontFamilyId: "display",
+  customFontId: "",
+  customFontName: "",
+  customFontDataUrl: "",
+  showTitle: true,
+  showSubtitle: true,
   layout: "text-top-image-bottom",
   titleScaleMultiplier: DEFAULT_TITLE_SIZE_PX / DEFAULT_TITLE_BASE_SCALE,
   subtitleScaleMultiplier: DEFAULT_SUBTITLE_SIZE_PX / DEFAULT_SUBTITLE_BASE_SCALE,
@@ -89,6 +94,11 @@ type CreateFlowContextValue = {
   customBackgroundAccentOpacity: number;
   customTextColor: string;
   fontFamilyId: FontFamilyId;
+  customFontId: string;
+  customFontName: string;
+  customFontDataUrl: string;
+  showTitle: boolean;
+  showSubtitle: boolean;
   layout: LayoutId;
   titleScaleMultiplier: number;
   subtitleScaleMultiplier: number;
@@ -122,6 +132,9 @@ type CreateFlowContextValue = {
   setCustomBackgroundAccentOpacity: (value: number) => void;
   setCustomTextColor: (value: string) => void;
   setFontFamilyId: (fontFamilyId: FontFamilyId) => void;
+  setCustomFont: (fontId: string, fontName: string, fontDataUrl: string) => void;
+  setShowTitle: (value: boolean) => void;
+  setShowSubtitle: (value: boolean) => void;
   setLayout: (layout: LayoutId) => void;
   setTitleScaleMultiplier: (value: number) => void;
   setSubtitleScaleMultiplier: (value: number) => void;
@@ -241,6 +254,12 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
     DEFAULT_RENDER_CONTROLS.customBackgroundAccentOpacity!;
   const customTextColor = renderControls.customTextColor ?? DEFAULT_RENDER_CONTROLS.customTextColor!;
   const fontFamilyId = renderControls.fontFamilyId ?? DEFAULT_RENDER_CONTROLS.fontFamilyId!;
+  const customFontId = renderControls.customFontId ?? DEFAULT_RENDER_CONTROLS.customFontId!;
+  const customFontName = renderControls.customFontName ?? DEFAULT_RENDER_CONTROLS.customFontName!;
+  const customFontDataUrl =
+    renderControls.customFontDataUrl ?? DEFAULT_RENDER_CONTROLS.customFontDataUrl!;
+  const showTitle = renderControls.showTitle ?? DEFAULT_RENDER_CONTROLS.showTitle!;
+  const showSubtitle = renderControls.showSubtitle ?? DEFAULT_RENDER_CONTROLS.showSubtitle!;
   const layout = renderControls.layout ?? DEFAULT_RENDER_CONTROLS.layout!;
   const titleScaleMultiplier =
     renderControls.titleScaleMultiplier ?? DEFAULT_RENDER_CONTROLS.titleScaleMultiplier!;
@@ -352,6 +371,20 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
   }, [updateRenderControls]);
   const setFontFamilyId = useCallback((value: FontFamilyId) => {
     updateRenderControls({ fontFamilyId: value });
+  }, [updateRenderControls]);
+  const setCustomFont = useCallback((fontId: string, fontName: string, fontDataUrl: string) => {
+    updateRenderControls({
+      fontFamilyId: "custom-upload",
+      customFontId: fontId,
+      customFontName: fontName,
+      customFontDataUrl: fontDataUrl,
+    });
+  }, [updateRenderControls]);
+  const setShowTitle = useCallback((value: boolean) => {
+    updateRenderControls({ showTitle: value });
+  }, [updateRenderControls]);
+  const setShowSubtitle = useCallback((value: boolean) => {
+    updateRenderControls({ showSubtitle: value });
   }, [updateRenderControls]);
   const setLayout = useCallback((value: LayoutId) => {
     updateRenderControls({ layout: value });
@@ -597,6 +630,11 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       customBackgroundAccentOpacity,
       customTextColor,
       fontFamilyId,
+      customFontId,
+      customFontName,
+      customFontDataUrl,
+      showTitle,
+      showSubtitle,
       layout,
       titleScaleMultiplier,
       subtitleScaleMultiplier,
@@ -630,6 +668,9 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       setCustomBackgroundAccentOpacity,
       setCustomTextColor,
       setFontFamilyId,
+      setCustomFont,
+      setShowTitle,
+      setShowSubtitle,
       setLayout,
       setTitleScaleMultiplier,
       setSubtitleScaleMultiplier,
@@ -660,6 +701,11 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       customBackgroundOpacity,
       customBackgroundAccentOpacity,
       customTextColor,
+      customFontId,
+      customFontDataUrl,
+      customFontName,
+      showSubtitle,
+      showTitle,
       defaultFrameEnabled,
       globalRenderControls,
       fontFamilyId,
@@ -699,6 +745,9 @@ export function CreateFlowProvider({ children }: { children: ReactNode }) {
       setCustomBackgroundAccentOpacity,
       setCustomTextColor,
       setFontFamilyId,
+      setCustomFont,
+      setShowTitle,
+      setShowSubtitle,
       setFrameEnabled,
       setLayout,
       setScreenshotOffsetX,

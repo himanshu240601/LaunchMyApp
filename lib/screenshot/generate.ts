@@ -18,6 +18,11 @@ export type RenderControls = {
   customBackgroundAccentOpacity?: number;
   customTextColor?: string;
   fontFamilyId?: FontFamilyId;
+  customFontId?: string;
+  customFontName?: string;
+  customFontDataUrl?: string;
+  showTitle?: boolean;
+  showSubtitle?: boolean;
   titleScaleMultiplier?: number;
   subtitleScaleMultiplier?: number;
   subtitleSpacingMultiplier?: number;
@@ -36,6 +41,7 @@ type RenderSlideOptions = {
 };
 
 const imageCache = new Map<string, Promise<HTMLImageElement>>();
+const customFontCache = new Map<string, Promise<string>>();
 
 function loadImage(src: string) {
   const existing = imageCache.get(src);
@@ -51,6 +57,36 @@ function loadImage(src: string) {
   });
 
   imageCache.set(src, promise);
+  return promise;
+}
+
+async function loadCustomFontFamily(dataUrl: string, fontName: string) {
+  const cacheKey = `${fontName}:${dataUrl}`;
+  const existing = customFontCache.get(cacheKey);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = (async () => {
+    const safeName = fontName.trim() || "Uploaded Font";
+    const family = `LaunchMyAppCustom-${safeName.replace(/[^a-zA-Z0-9]+/g, "-")}-${cacheKey.length}`;
+
+    if (typeof document === "undefined" || typeof FontFace === "undefined") {
+      return `"${safeName}"`;
+    }
+
+    const alreadyLoaded = Array.from(document.fonts).some((font) => font.family === family);
+    if (!alreadyLoaded) {
+      const fontFace = new FontFace(family, `url(${dataUrl})`);
+      await fontFace.load();
+      document.fonts.add(fontFace);
+    }
+
+    await document.fonts.load(`16px "${family}"`);
+    return `"${family}"`;
+  })();
+
+  customFontCache.set(cacheKey, promise);
   return promise;
 }
 
@@ -102,10 +138,22 @@ function getLayoutMetrics(
   preset: ExportPreset,
   template: ReturnType<typeof getScreenshotTemplate>,
 ) {
+  if (layout === "no-text") {
+    const screenshotTop = 0.11;
+    const screenshotHeight = 0.78;
+
+    return {
+      titleTop: template.title.top,
+      slotTop: preset.height * screenshotTop,
+      slotHeight: preset.height * screenshotHeight,
+    };
+  }
+
   if (layout === "image-top-text-bottom") {
     const screenshotTop = 0.11;
     const screenshotHeight = Math.min(template.screenshotSlot.height, 0.56);
-    const titleTop = Math.min(screenshotTop + screenshotHeight + 0.05, 0.78);
+    const defaultLayoutGap = template.screenshotSlot.top - template.subtitle.top;
+    const titleTop = Math.min(screenshotTop + screenshotHeight + defaultLayoutGap, 0.78);
 
     return {
       titleTop,
@@ -119,17 +167,6 @@ function getLayoutMetrics(
     slotTop: preset.height * template.screenshotSlot.top,
     slotHeight: preset.height * template.screenshotSlot.height,
   };
-}
-
-function getSubtitleTop(
-  layoutMetrics: ReturnType<typeof getLayoutMetrics>,
-  template: ReturnType<typeof getScreenshotTemplate>,
-  subtitleSpacingMultiplier: number,
-) {
-  const defaultOffset = template.subtitle.top - template.title.top;
-  const adjustedOffset = defaultOffset * subtitleSpacingMultiplier;
-
-  return Math.min(layoutMetrics.titleTop + adjustedOffset, 0.9);
 }
 
 export async function renderSlideToCanvas(
@@ -171,7 +208,12 @@ export async function renderSlideToCanvas(
             ),
           }
       : backgroundStyle ?? template.background;
-  const fontFamilyStack = getFontFamilyStack(controls.fontFamilyId ?? "display");
+  const fontFamilyStack =
+    controls.fontFamilyId === "custom-upload" &&
+    controls.customFontDataUrl &&
+    controls.customFontName
+      ? await loadCustomFontFamily(controls.customFontDataUrl, controls.customFontName)
+      : getFontFamilyStack(controls.fontFamilyId ?? "display");
   const titleScaleMultiplier = controls.titleScaleMultiplier ?? 1.2;
   const subtitleScaleMultiplier = controls.subtitleScaleMultiplier ?? 1.15;
   const subtitleSpacingMultiplier = controls.subtitleSpacingMultiplier ?? 1;
@@ -182,6 +224,8 @@ export async function renderSlideToCanvas(
   const screenshotOffsetY = controls.screenshotOffsetY ?? 0;
   const customTextColor = controls.customTextColor;
   const layout = controls.layout ?? "text-top-image-bottom";
+  const showTitle = controls.showTitle ?? true;
+  const showSubtitle = controls.showSubtitle ?? true;
 
   canvas.width = preset.width;
   canvas.height = preset.height;
@@ -248,7 +292,6 @@ export async function renderSlideToCanvas(
 
   const paddingX = preset.width * template.spacing.paddingX;
   const layoutMetrics = getLayoutMetrics(layout, preset, template);
-  const subtitleTop = getSubtitleTop(layoutMetrics, template, subtitleSpacingMultiplier);
   const normalizedTextOffsetX = Math.max(-1, Math.min(1, textOffsetX / 100));
   const normalizedTextOffsetY = Math.max(-1, Math.min(1, textOffsetY / 100));
   const textX = preset.width / 2 + preset.width * 0.18 * normalizedTextOffsetX;
@@ -261,10 +304,24 @@ export async function renderSlideToCanvas(
       ? (preset.width - slotWidth) / 2
       : paddingX;
 
-  context.fillStyle = customTextColor || template.title.color;
-  context.font = `700 ${Math.round(
+  const titleFontSizePx = Math.round(
     preset.width * template.title.fontScale * titleScaleMultiplier,
-  )}px ${fontFamilyStack}`;
+  );
+  const subtitleFontSizePx = Math.round(
+    preset.width * template.subtitle.fontScale * subtitleScaleMultiplier,
+  );
+  const titleLineHeightPx = preset.width * template.title.lineHeight;
+  const subtitleLineHeightPx = preset.width * template.subtitle.lineHeight;
+  const titleTopPx = preset.height * layoutMetrics.titleTop + textYOffset;
+  const titleToSubtitleGapPx = Math.max(
+    16,
+    preset.height * (template.subtitle.top - template.title.top) -
+      titleFontSizePx -
+      (template.title.maxLines - 1) * titleLineHeightPx,
+  ) * subtitleSpacingMultiplier;
+
+  context.fillStyle = customTextColor || template.title.color;
+  context.font = `700 ${titleFontSizePx}px ${fontFamilyStack}`;
   context.textAlign = "center";
   context.textBaseline = "top";
 
@@ -272,34 +329,43 @@ export async function renderSlideToCanvas(
     0,
     template.title.maxLines,
   );
-  lines.forEach((line, index) => {
-    context.fillText(
-      line,
-      textX,
-      preset.height * layoutMetrics.titleTop +
-        textYOffset +
-        index * preset.width * template.title.lineHeight,
-    );
-  });
+  if (showTitle && layout !== "no-text") {
+    lines.forEach((line, index) => {
+      context.fillText(
+        line,
+        textX,
+        titleTopPx + index * titleLineHeightPx,
+      );
+    });
+  }
 
   context.fillStyle = customTextColor || template.subtitle.color;
-  context.font = `500 ${Math.round(
-    preset.width * template.subtitle.fontScale * subtitleScaleMultiplier,
-  )}px ${fontFamilyStack}`;
+  context.font = `500 ${subtitleFontSizePx}px ${fontFamilyStack}`;
   const subtitleLines = wrapText(
     context,
     slide.subtitle,
     preset.width * template.subtitle.maxWidth,
   ).slice(0, template.subtitle.maxLines);
-  subtitleLines.forEach((line, index) => {
-    context.fillText(
-      line,
-      textX,
-      preset.height * subtitleTop +
-        textYOffset +
-        index * preset.width * template.subtitle.lineHeight,
-    );
-  });
+  const titleLineCount = lines.length || 1;
+  const subtitleAnchorY =
+    titleTopPx +
+    titleFontSizePx +
+    (titleLineCount - 1) * titleLineHeightPx +
+    (showTitle && layout !== "no-text" ? titleToSubtitleGapPx : 0);
+  const subtitleTopPx =
+    showTitle && layout !== "no-text"
+      ? subtitleAnchorY
+      : preset.height * template.subtitle.top + textYOffset;
+
+  if (showSubtitle && layout !== "no-text") {
+    subtitleLines.forEach((line, index) => {
+      context.fillText(
+        line,
+        textX,
+        subtitleTopPx + index * subtitleLineHeightPx,
+      );
+    });
+  }
 
   if (!frameAsset || !template.frame) {
     const scale =

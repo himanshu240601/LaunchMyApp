@@ -98,7 +98,9 @@ export function Navbar() {
           </div>
           <div>
             <p className="text-sm font-semibold tracking-tight">LaunchMyApp</p>
-            <p className="text-xs text-muted-foreground">App Store Screenshot Generator</p>
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              App Store Screenshot Generator
+            </p>
           </div>
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
@@ -132,10 +134,12 @@ export function Navbar() {
                 >
                   {isLoadingIntent === "signin" ? "Logging out..." : "Logout"}
                 </Button>
-                <Link href="/create" className={buttonVariants({ size: "lg", className: "gap-2" })}>
-                  Create
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                <div className="hidden sm:block">
+                  <Link href="/create" className={buttonVariants({ size: "lg", className: "gap-2" })}>
+                    Create
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </>
             ) : (
               <>
@@ -151,17 +155,19 @@ export function Navbar() {
                 >
                   {isLoadingIntent === "signin" ? "Signing in..." : "Sign in"}
                 </Button>
-                <button
-                  type="button"
-                  className={buttonVariants({ size: "lg", className: "gap-2" })}
-                  onClick={() => {
-                    void handleAuthClick("signup");
-                  }}
-                  disabled={isLoadingIntent !== null}
-                >
-                  {isLoadingIntent === "signup" ? "Starting..." : "Try it for Free"}
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+                <div className="hidden sm:block">
+                  <button
+                    type="button"
+                    className={buttonVariants({ size: "lg", className: "gap-2" })}
+                    onClick={() => {
+                      void handleAuthClick("signup");
+                    }}
+                    disabled={isLoadingIntent !== null}
+                  >
+                    {isLoadingIntent === "signup" ? "Starting..." : "Try it for Free"}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
               </>
             )}
           </div>

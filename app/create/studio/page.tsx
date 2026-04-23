@@ -62,6 +62,12 @@ export default function StudioPage() {
     setBackgroundStyleId,
     fontFamilyId,
     setFontFamilyId,
+    customFontId,
+    setCustomFont,
+    showTitle,
+    setShowTitle,
+    showSubtitle,
+    setShowSubtitle,
     titleScaleMultiplier,
     setTitleScaleMultiplier,
     subtitleScaleMultiplier,
@@ -285,6 +291,12 @@ export default function StudioPage() {
               onBackgroundStyleChange={setBackgroundStyleId}
               fontFamilyId={fontFamilyId}
               onFontFamilyChange={setFontFamilyId}
+              customFontId={customFontId}
+              onCustomFontChange={setCustomFont}
+              showTitle={showTitle}
+              onShowTitleChange={setShowTitle}
+              showSubtitle={showSubtitle}
+              onShowSubtitleChange={setShowSubtitle}
               titleScaleMultiplier={titleScaleMultiplier}
               onTitleScaleMultiplierChange={setTitleScaleMultiplier}
               subtitleScaleMultiplier={subtitleScaleMultiplier}
@@ -354,6 +366,12 @@ export default function StudioPage() {
               onBackgroundStyleChange={setBackgroundStyleId}
               fontFamilyId={fontFamilyId}
               onFontFamilyChange={setFontFamilyId}
+              customFontId={customFontId}
+              onCustomFontChange={setCustomFont}
+              showTitle={showTitle}
+              onShowTitleChange={setShowTitle}
+              showSubtitle={showSubtitle}
+              onShowSubtitleChange={setShowSubtitle}
               titleScaleMultiplier={titleScaleMultiplier}
               onTitleScaleMultiplierChange={setTitleScaleMultiplier}
               subtitleScaleMultiplier={subtitleScaleMultiplier}

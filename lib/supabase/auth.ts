@@ -1,5 +1,6 @@
 "use client";
 
+import { clearSavedCustomFonts } from "@/lib/screenshot/custom-fonts";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type GoogleAuthIntent = "signin" | "signup";
@@ -41,4 +42,6 @@ export async function signOutSupabase() {
   if (error) {
     throw error;
   }
+
+  clearSavedCustomFonts();
 }

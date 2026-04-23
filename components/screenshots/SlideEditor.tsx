@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { Check, Smartphone } from "lucide-react";
 
@@ -22,6 +22,11 @@ import {
   type PreviewTemplateId,
 } from "@/lib/screenshot/templates";
 import type { ExportPreset } from "@/lib/screenshot/presets";
+import {
+  addSavedCustomFont,
+  loadSavedCustomFonts,
+  type SavedCustomFont,
+} from "@/lib/screenshot/custom-fonts";
 
 type SlideEditorProps = {
   slide: Slide | null;
@@ -53,6 +58,12 @@ type SlideEditorProps = {
   onBackgroundStyleChange: (backgroundStyleId: BackgroundStyleId) => void;
   fontFamilyId: FontFamilyId;
   onFontFamilyChange: (fontFamilyId: FontFamilyId) => void;
+  customFontId?: string;
+  onCustomFontChange?: (fontId: string, fontName: string, fontDataUrl: string) => void;
+  showTitle?: boolean;
+  onShowTitleChange?: (value: boolean) => void;
+  showSubtitle?: boolean;
+  onShowSubtitleChange?: (value: boolean) => void;
   titleScaleMultiplier: number;
   onTitleScaleMultiplierChange: (value: number) => void;
   subtitleScaleMultiplier: number;
@@ -104,6 +115,10 @@ export function SlideEditor({
   onBackgroundStyleChange,
   fontFamilyId,
   onFontFamilyChange,
+  customFontId = "",
+  onCustomFontChange,
+  showSubtitle = true,
+  onShowSubtitleChange,
   titleScaleMultiplier,
   onTitleScaleMultiplierChange,
   subtitleScaleMultiplier,
@@ -126,6 +141,8 @@ export function SlideEditor({
 }: SlideEditorProps) {
   const [activeDesignTab, setActiveDesignTab] = useState<"settings" | "templates" | "export">("settings");
   const [showApplyAllDialog, setShowApplyAllDialog] = useState(false);
+  const [savedCustomFonts, setSavedCustomFonts] = useState<SavedCustomFont[]>(() => loadSavedCustomFonts());
+  const customFontInputRef = useRef<HTMLInputElement | null>(null);
   const titleCharacterCount = slide?.title.length ?? 0;
   const subtitleCharacterCount = slide?.subtitle.length ?? 0;
   const normalizedColorValue = /^#([0-9a-fA-F]{6})$/.test(customBackgroundColor)
@@ -137,6 +154,24 @@ export function SlideEditor({
   const normalizedTextColorValue = /^#([0-9a-fA-F]{6})$/.test(customTextColor)
     ? customTextColor
     : "#20130d";
+
+  const dropdownFontOptions = [
+    ...FONT_FAMILY_OPTIONS.map((option) =>
+      option.id === "custom-upload"
+        ? {
+            ...option,
+            label: "Add your own font...",
+          }
+        : option,
+    ),
+    ...savedCustomFonts.map((font) => ({
+      id: `custom:${font.id}`,
+      label: font.name,
+      stack: `"${font.name}", "Avenir Next", "SF Pro Display", "Segoe UI", sans-serif`,
+    })),
+  ];
+  const selectedFontValue =
+    fontFamilyId === "custom-upload" && customFontId ? `custom:${customFontId}` : fontFamilyId;
 
   const activeTemplate = getScreenshotTemplate(selectedTemplate);
   const baseTitleSizePx = previewPreset.width * activeTemplate.title.fontScale;
@@ -153,6 +188,7 @@ export function SlideEditor({
   const subtitleSizeOptions = Array.from(
     new Set([24, 28, 32, 36, 40, 44, 48, 52, 56, subtitleSizePx]),
   ).sort((a, b) => a - b);
+  const isNoTextLayout = layout === "no-text";
 
   const renderColorField = ({
     colorValue,
@@ -249,6 +285,24 @@ export function SlideEditor({
     setShowApplyAllDialog(false);
   };
 
+  const handleCustomFontSelected = async (file: File | null) => {
+    if (!file || !onCustomFontChange) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        const nextName = file.name.replace(/\.[^.]+$/, "");
+        const savedFont = addSavedCustomFont(nextName, result);
+        setSavedCustomFonts(loadSavedCustomFonts());
+        onCustomFontChange(savedFont.id, savedFont.name, savedFont.dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className={panelless ? "flex h-full min-h-0 min-w-0 max-w-full w-full flex-col overflow-hidden" : "flex h-full min-h-0 min-w-0 max-w-full w-full flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-soft"}>
       <ThemedDialog
@@ -301,7 +355,13 @@ export function SlideEditor({
           ].join(" ")}
         >
           {showTextFields ? (
-            <>
+            <div
+              className={[
+                "space-y-4 rounded-[1.5rem] border border-border bg-background/80 p-4 transition-opacity",
+                isNoTextLayout ? "opacity-50" : "opacity-100",
+              ].join(" ")}
+              aria-disabled={isNoTextLayout}
+            >
               <div className="min-w-0 space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <label className="block text-sm font-medium text-foreground" htmlFor="slide-title">
@@ -316,6 +376,7 @@ export function SlideEditor({
                   value={slide.title}
                   onChange={(event) => onTitleChange(event.target.value)}
                   maxLength={20}
+                  disabled={isNoTextLayout}
                   className="min-w-0 max-w-full w-full overflow-x-hidden rounded-2xl border border-border bg-white px-4 py-3 text-foreground outline-none transition-colors focus:border-primary"
                   placeholder="Enter screen title"
                 />
@@ -334,11 +395,12 @@ export function SlideEditor({
                   value={slide.subtitle}
                   onChange={(event) => onSubtitleChange(event.target.value)}
                   maxLength={70}
+                  disabled={isNoTextLayout}
                   className="min-h-28 min-w-0 max-w-full w-full resize-none overflow-x-hidden rounded-2xl border border-border bg-white px-4 py-3 text-foreground outline-none transition-colors focus:border-primary"
                   placeholder="Add supporting copy"
                 />
               </div>
-            </>
+            </div>
           ) : null}
 
           {showDesignControls ? (
@@ -559,134 +621,185 @@ export function SlideEditor({
                     )}
                   </div>
 
-                  <div className="space-y-2.5">
-                    <p className="text-sm font-medium text-foreground">Font</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {FONT_FAMILY_OPTIONS.map((fontOption) => (
-                        <button
-                          key={fontOption.id}
-                          type="button"
-                          onClick={() => onFontFamilyChange(fontOption.id)}
-                          className={[
-                            "rounded-2xl border px-3 py-2.5 text-center text-sm font-medium transition-colors",
-                            fontFamilyId === fontOption.id
-                              ? "border-primary/30 bg-orange-50/80 text-foreground"
-                              : "border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-foreground",
-                          ].join(" ")}
-                        >
-                          {fontOption.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {!isNoTextLayout ? (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="text-sm font-medium text-foreground" htmlFor="font-family">
+                          Font
+                        </label>
+                      </div>
+                      <select
+                        id="font-family"
+                        value={selectedFontValue}
+                        onChange={(event) => {
+                          const nextValue = event.target.value;
 
-                  <div className="space-y-3 rounded-[1.5rem] border border-border bg-background/80 p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-4">
-                        <label className="text-sm font-medium text-foreground" htmlFor="title-size">
-                          Title Size
-                        </label>
-                        <span className="text-sm text-muted-foreground">
-                          {titleSizePx}px
-                        </span>
-                      </div>
-                      <select
-                        id="title-size"
-                        value={titleSizePx}
-                        onChange={(event) =>
-                          onTitleScaleMultiplierChange(Number(event.target.value) / baseTitleSizePx)
-                        }
+                          if (nextValue === "custom-upload") {
+                            customFontInputRef.current?.click();
+                            return;
+                          }
+
+                          if (nextValue.startsWith("custom:")) {
+                            const nextCustomFont = savedCustomFonts.find(
+                              (font) => `custom:${font.id}` === nextValue,
+                            );
+                            if (nextCustomFont && onCustomFontChange) {
+                              onCustomFontChange(
+                                nextCustomFont.id,
+                                nextCustomFont.name,
+                                nextCustomFont.dataUrl,
+                              );
+                            }
+                            return;
+                          }
+
+                          onFontFamilyChange(nextValue as FontFamilyId);
+                        }}
                         className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                        style={{
+                          fontFamily:
+                            dropdownFontOptions.find((option) => option.id === selectedFontValue)?.stack,
+                        }}
                       >
-                        {titleSizeOptions.map((size) => (
-                          <option key={size} value={size}>
-                            {size}px
+                        {dropdownFontOptions.map((fontOption) => (
+                          <option
+                            key={fontOption.id}
+                            value={fontOption.id}
+                            style={{ fontFamily: fontOption.stack }}
+                          >
+                            {fontOption.label}
                           </option>
                         ))}
                       </select>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-4">
-                        <label className="text-sm font-medium text-foreground" htmlFor="subtitle-size">
-                          Subtitle Size
-                        </label>
-                        <span className="text-sm text-muted-foreground">
-                          {subtitleSizePx}px
-                        </span>
-                      </div>
-                      <select
-                        id="subtitle-size"
-                        value={subtitleSizePx}
-                        onChange={(event) =>
-                          onSubtitleScaleMultiplierChange(
-                            Number(event.target.value) / baseSubtitleSizePx,
-                          )
-                        }
-                        className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
-                      >
-                        {subtitleSizeOptions.map((size) => (
-                          <option key={size} value={size}>
-                            {size}px
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-4">
-                        <label className="text-sm font-medium text-foreground" htmlFor="subtitle-spacing">
-                          Title/Subtitle Spacing
-                        </label>
-                        <span className="text-sm text-muted-foreground">
-                          {subtitleSpacingMultiplier.toFixed(2)}x
-                        </span>
-                      </div>
                       <input
-                        id="subtitle-spacing"
-                        type="range"
-                        min="0.6"
-                        max="1.8"
-                        step="0.05"
-                        value={subtitleSpacingMultiplier}
-                        onChange={(event) =>
-                          onSubtitleSpacingMultiplierChange(Number(event.target.value))
-                        }
-                        className="w-full accent-primary"
+                        ref={customFontInputRef}
+                        type="file"
+                        accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"
+                        className="hidden"
+                        onChange={(event) => {
+                          void handleCustomFontSelected(event.target.files?.[0] ?? null);
+                          event.currentTarget.value = "";
+                        }}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <label className="space-y-1.5">
-                          <span className="text-sm font-medium text-foreground">Position X</span>
-                          <input
-                            type="number"
-                            value={textOffsetX}
-                            onChange={(event) => onTextOffsetXChange(Number(event.target.value) || 0)}
-                            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </label>
-                        <label className="space-y-1.5">
-                          <span className="text-sm font-medium text-foreground">Position Y</span>
-                          <input
-                            type="number"
-                            value={textOffsetY}
-                            onChange={(event) => onTextOffsetYChange(Number(event.target.value) || 0)}
-                            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+                  ) : null}
 
-                  <div className="space-y-2.5">
-                    <p className="text-sm font-medium text-foreground">Text Color</p>
-                    {renderColorField({
-                      colorValue: normalizedTextColorValue,
-                      opacity: 1,
-                      onColorChange: onCustomTextColorChange,
-                      inputId: "custom-text-hex",
-                      fallbackColor: "#20130D",
-                    })}
-                  </div>
+                  {!isNoTextLayout ? (
+                    <>
+                      <div className="space-y-3 rounded-[1.5rem] border border-border bg-background/80 p-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground" htmlFor="title-size">
+                            Title Size
+                          </label>
+                          <select
+                            id="title-size"
+                            value={titleSizePx}
+                            onChange={(event) =>
+                              onTitleScaleMultiplierChange(Number(event.target.value) / baseTitleSizePx)
+                            }
+                            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                          >
+                            {titleSizeOptions.map((size) => (
+                              <option key={size} value={size}>
+                                {size}px
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-4">
+                            <label className="text-sm font-medium text-foreground" htmlFor="subtitle-size">
+                              Subtitle Size
+                            </label>
+                            <label
+                              className="inline-flex items-center gap-2 text-sm text-muted-foreground"
+                              htmlFor="subtitle-show"
+                            >
+                              <span>Show</span>
+                              <input
+                                id="subtitle-show"
+                                type="checkbox"
+                                checked={showSubtitle}
+                                onChange={(event) => onShowSubtitleChange?.(event.target.checked)}
+                                className="h-4 w-4 rounded border-border text-primary accent-primary"
+                              />
+                            </label>
+                          </div>
+                          <select
+                            id="subtitle-size"
+                            value={subtitleSizePx}
+                            onChange={(event) =>
+                              onSubtitleScaleMultiplierChange(
+                                Number(event.target.value) / baseSubtitleSizePx,
+                              )
+                            }
+                            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                          >
+                            {subtitleSizeOptions.map((size) => (
+                              <option key={size} value={size}>
+                                {size}px
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-4">
+                            <label className="text-sm font-medium text-foreground" htmlFor="subtitle-spacing">
+                              Title/Subtitle Spacing
+                            </label>
+                            <span className="text-sm text-muted-foreground">
+                              {subtitleSpacingMultiplier.toFixed(2)}x
+                            </span>
+                          </div>
+                          <input
+                            id="subtitle-spacing"
+                            type="range"
+                            min="0.6"
+                            max="1.8"
+                            step="0.05"
+                            value={subtitleSpacingMultiplier}
+                            onChange={(event) =>
+                              onSubtitleSpacingMultiplierChange(Number(event.target.value))
+                            }
+                            className="w-full accent-primary"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <label className="space-y-1.5">
+                              <span className="text-sm font-medium text-foreground">Position X</span>
+                              <input
+                                type="number"
+                                value={textOffsetX}
+                                onChange={(event) => onTextOffsetXChange(Number(event.target.value) || 0)}
+                                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </label>
+                            <label className="space-y-1.5">
+                              <span className="text-sm font-medium text-foreground">Position Y</span>
+                              <input
+                                type="number"
+                                value={textOffsetY}
+                                onChange={(event) => onTextOffsetYChange(Number(event.target.value) || 0)}
+                                className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        <p className="text-sm font-medium text-foreground">Text Color</p>
+                        {renderColorField({
+                          colorValue: normalizedTextColorValue,
+                          opacity: 1,
+                          onColorChange: onCustomTextColorChange,
+                          inputId: "custom-text-hex",
+                          fallbackColor: "#20130D",
+                        })}
+                      </div>
+                    </>
+                  ) : null}
 
                 </>
               ) : activeDesignTab === "export" ? (

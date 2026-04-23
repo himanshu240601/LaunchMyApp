@@ -10,8 +10,40 @@ export type BackgroundStyleId =
   | "warm-glow"
   | "dark-studio";
 
-export type FontFamilyId = "display" | "clean" | "rounded";
-export type LayoutId = "text-top-image-bottom" | "image-top-text-bottom";
+export type FontFamilyId =
+  | "display"
+  | "clean"
+  | "rounded"
+  | "custom-upload"
+  | "arial"
+  | "helvetica"
+  | "georgia"
+  | "times"
+  | "verdana"
+  | "trebuchet"
+  | "gill-sans"
+  | "palatino"
+  | "garamond"
+  | "bookman"
+  | "avant-garde"
+  | "optima"
+  | "tahoma"
+  | "courier-new"
+  | "baskerville"
+  | "didot"
+  | "american-typewriter"
+  | "copperplate"
+  | "charter"
+  | "franklin-gothic"
+  | "lucida-sans"
+  | "lucida-console"
+  | "editorial"
+  | "modern"
+  | "mono";
+export type LayoutId =
+  | "text-top-image-bottom"
+  | "image-top-text-bottom"
+  | "no-text";
 
 export type TemplateAlignment = "center";
 
@@ -129,6 +161,7 @@ const IPHONE_FRAME: TemplateFrameConfig = {
 export const LAYOUT_OPTIONS: LayoutOption[] = [
   { id: "text-top-image-bottom", label: "Text Top" },
   { id: "image-top-text-bottom", label: "Image Top" },
+  { id: "no-text", label: "No Text" },
 ];
 
 export const SCREENSHOT_TEMPLATES: ScreenshotTemplate[] = [
@@ -360,6 +393,11 @@ export const BACKGROUND_STYLE_OPTIONS: BackgroundStyleOption[] = [
 
 export const FONT_FAMILY_OPTIONS: FontFamilyOption[] = [
   {
+    id: "custom-upload",
+    label: "Your font",
+    stack: '"Avenir Next", "SF Pro Display", "Segoe UI", "Helvetica Neue", sans-serif',
+  },
+  {
     id: "display",
     label: "Display",
     stack: '"Avenir Next", "SF Pro Display", "Segoe UI", "Helvetica Neue", sans-serif',
@@ -373,6 +411,131 @@ export const FONT_FAMILY_OPTIONS: FontFamilyOption[] = [
     id: "rounded",
     label: "Rounded",
     stack: '"Avenir Next Rounded", "Avenir Next", "SF Pro Rounded", "Segoe UI", sans-serif',
+  },
+  {
+    id: "arial",
+    label: "Arial",
+    stack: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+  },
+  {
+    id: "helvetica",
+    label: "Helvetica",
+    stack: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+  },
+  {
+    id: "georgia",
+    label: "Georgia",
+    stack: 'Georgia, "Times New Roman", Times, serif',
+  },
+  {
+    id: "times",
+    label: "Times New Roman",
+    stack: '"Times New Roman", Times, serif',
+  },
+  {
+    id: "verdana",
+    label: "Verdana",
+    stack: 'Verdana, Geneva, sans-serif',
+  },
+  {
+    id: "trebuchet",
+    label: "Trebuchet MS",
+    stack: '"Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", sans-serif',
+  },
+  {
+    id: "gill-sans",
+    label: "Gill Sans",
+    stack: '"Gill Sans", "Gill Sans MT", "Trebuchet MS", sans-serif',
+  },
+  {
+    id: "palatino",
+    label: "Palatino",
+    stack: '"Palatino Linotype", Palatino, "Book Antiqua", serif',
+  },
+  {
+    id: "garamond",
+    label: "Garamond",
+    stack: 'Garamond, Baskerville, "Times New Roman", serif',
+  },
+  {
+    id: "bookman",
+    label: "Bookman",
+    stack: '"Bookman Old Style", Bookman, Georgia, serif',
+  },
+  {
+    id: "avant-garde",
+    label: "Avant Garde",
+    stack: '"Avant Garde", "Century Gothic", "Futura", sans-serif',
+  },
+  {
+    id: "optima",
+    label: "Optima",
+    stack: 'Optima, Candara, "Segoe UI", sans-serif',
+  },
+  {
+    id: "tahoma",
+    label: "Tahoma",
+    stack: 'Tahoma, Verdana, "Segoe UI", sans-serif',
+  },
+  {
+    id: "courier-new",
+    label: "Courier New",
+    stack: '"Courier New", Courier, "Lucida Console", monospace',
+  },
+  {
+    id: "baskerville",
+    label: "Baskerville",
+    stack: 'Baskerville, "Baskerville Old Face", Garamond, serif',
+  },
+  {
+    id: "didot",
+    label: "Didot",
+    stack: 'Didot, "Bodoni MT", "Times New Roman", serif',
+  },
+  {
+    id: "american-typewriter",
+    label: "American Typewriter",
+    stack: '"American Typewriter", "Courier New", Georgia, serif',
+  },
+  {
+    id: "copperplate",
+    label: "Copperplate",
+    stack: 'Copperplate, "Copperplate Gothic Light", Georgia, serif',
+  },
+  {
+    id: "charter",
+    label: "Charter",
+    stack: 'Charter, "Bitstream Charter", Georgia, serif',
+  },
+  {
+    id: "franklin-gothic",
+    label: "Franklin Gothic",
+    stack: '"Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif',
+  },
+  {
+    id: "lucida-sans",
+    label: "Lucida Sans",
+    stack: '"Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", sans-serif',
+  },
+  {
+    id: "lucida-console",
+    label: "Lucida Console",
+    stack: '"Lucida Console", "Courier New", monospace',
+  },
+  {
+    id: "editorial",
+    label: "Editorial",
+    stack: '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+  },
+  {
+    id: "modern",
+    label: "Modern",
+    stack: '"Futura", "Avenir Next", "Century Gothic", "Trebuchet MS", sans-serif',
+  },
+  {
+    id: "mono",
+    label: "Mono",
+    stack: '"SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace',
   },
 ];
 
