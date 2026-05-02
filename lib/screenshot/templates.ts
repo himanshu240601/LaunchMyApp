@@ -142,7 +142,7 @@ export type LayoutOption = {
 };
 
 const IPHONE_FRAME: TemplateFrameConfig = {
-  assetPath: "/frames/iphone-dark-premium.png",
+  assetPath: "/frames/iphone-15-clean.svg",
   bounds: {
     top: 0.24,
     width: 0.72,
@@ -150,11 +150,11 @@ const IPHONE_FRAME: TemplateFrameConfig = {
     align: "center",
   },
   screenSlot: {
-    x: 0.02,
-    y: 0.012,
-    width: 0.96,
-    height: 0.972,
-    borderRadius: 0.14,
+    x: 0.0565,
+    y: 0.0213,
+    width: 0.887,
+    height: 0.9575,
+    borderRadius: 0.117,
   },
 };
 
