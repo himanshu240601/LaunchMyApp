@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { getSafeRedirectPath } from "@/lib/safe-redirect";
 import { fetchCurrentUserProfile, upsertCurrentUserProfile } from "@/lib/supabase/profile";
 import { useSupabaseSession } from "@/lib/supabase/use-supabase-session";
 
@@ -43,6 +44,7 @@ function OnboardingContent() {
   const [customRole, setCustomRole] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nextPath = getSafeRedirectPath(searchParams.get("next"));
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +57,7 @@ function OnboardingContent() {
       try {
         const profile = await fetchCurrentUserProfile();
         if (!cancelled && profile) {
-          router.replace(searchParams.get("next") || "/create/edit");
+          router.replace(nextPath);
         }
       } catch {
         if (!cancelled) {
@@ -69,7 +71,7 @@ function OnboardingContent() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isLoading, router, searchParams]);
+  }, [isAuthenticated, isLoading, nextPath, router]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -95,7 +97,7 @@ function OnboardingContent() {
         role: resolvedRole.trim(),
         roleOption: roleOption || "Other",
       });
-      router.replace(searchParams.get("next") || "/create/edit");
+      router.replace(nextPath);
     } catch (submissionError) {
       setError(
         submissionError instanceof Error

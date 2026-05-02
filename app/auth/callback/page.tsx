@@ -6,6 +6,7 @@ import { LoaderCircle } from "lucide-react";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { fetchCurrentUserProfile } from "@/lib/supabase/profile";
+import { getSafeRedirectPath } from "@/lib/safe-redirect";
 
 function AuthCallbackFallback({ message = "Signing you in..." }: { message?: string }) {
   return (
@@ -32,7 +33,7 @@ function AuthCallbackContent() {
     let cancelled = false;
 
     async function finishAuth() {
-      const nextPath = searchParams.get("next") || "/create/edit";
+      const nextPath = getSafeRedirectPath(searchParams.get("next"));
       const intent = searchParams.get("intent");
       const code = searchParams.get("code");
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
